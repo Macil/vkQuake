@@ -76,6 +76,8 @@ pacman -S git flac glibc libgl libmad libvorbis libx11 sdl2 vulkan-validation-la
 
 \* Please note that for vkquake > v0.50, you will need at least v1.0.12.0 of libvulkan-dev (See [#55](https://github.com/Novum/vkQuake/issues/55)).
 
+Then install Rust using rustup: https://www.rust-lang.org/tools/install
+
 Then clone the vkQuake repo:
 
 ~~~
@@ -99,6 +101,8 @@ To compile vkQuake, first install the build dependencies with Homebrew:
 ~~~
 brew install molten-vk vulkan-headers sdl2 libvorbis flac mad
 ~~~
+
+Then install Rust using rustup: https://www.rust-lang.org/tools/install
 
 Then clone the vkQuake repo:
 

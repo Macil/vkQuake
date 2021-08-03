@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "librust.h"
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>
 #else
@@ -125,6 +126,8 @@ int main(int argc, char *argv[])
 	Sys_Printf("QuakeSpasm " QUAKESPASM_VER_STRING " (c) Ozkan Sezer, Eric Wasylishen & others\n");
 	Sys_Printf("QuakeSpasm-Spiked (c) Spike\n");
 	Sys_Printf("vkQuake " VKQUAKE_VER_STRING " (c) Axel Gneiting & others\n");
+
+	rust_testing("Rust test here");
 
 	Sys_Printf("Host_Init\n");
 	Host_Init();

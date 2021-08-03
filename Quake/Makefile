@@ -53,11 +53,13 @@ ifneq ($(DEBUG),0)
 DFLAGS += -D_DEBUG
 CFLAGS += -g
 do_strip=
+RUST_LIB=../rust/target/debug/librust.a
 else
 DFLAGS += -DNDEBUG
 CFLAGS += -O2
 CFLAGS += $(call check_gcc,-fweb,)
 CFLAGS += $(call check_gcc,-frename-registers,)
+RUST_LIB=../rust/target/release/librust.a
 cmd_strip=$(STRIP) $(1)
 define do_strip
 	$(call cmd_strip,$(1));
@@ -165,7 +167,7 @@ LIBS := $(COMMON_LIBS) $(NET_LIBS) $(CODECLIBS)
 # targets
 # ---------------------------
 
-.PHONY:	clean debug release
+.PHONY:	clean debug release RUST_SOURCE
 
 DEFAULT_TARGET := vkquake
 
@@ -293,6 +295,7 @@ OBJS := strlcat.o \
 	sv_user.o \
 	world.o \
 	zone.o \
+	$(RUST_LIB) \
 	$(SYSOBJ_SYS) $(SYSOBJ_MAIN) $(SYSOBJ_RES)
 
 # ------------------------
@@ -305,12 +308,19 @@ vkquake:	$(OBJS)
 
 image.o: lodepng.c lodepng.h stb_image_write.h
 
+../rust/target/debug/librust.a: RUST_SOURCE
+	cd ../rust && cargo build
+
+../rust/target/release/librust.a: RUST_SOURCE
+	cd ../rust && cargo build --release
+
 release:	vkquake
 debug:
 	$(error Use "make DEBUG=1")
 
 clean:
 	rm -f $(shell find . \( -name '*~' -o -name '#*#' -o -name '*.o' -o -name '*.res' -o -name $(DEFAULT_TARGET) \) -print)
+	cd ../rust && cargo clean
 
 prefix ?= /usr
 exec_prefix ?= $(prefix)
