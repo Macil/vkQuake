@@ -16,6 +16,7 @@ ifneq ($(DEBUG),0)
 DFLAGS += -D_DEBUG
 CFLAGS += -g
 DO_STRIP=
+RUST_LIB = $(RUST_DEBUG_LIB)
 else
 DFLAGS += -DNDEBUG
 CFLAGS += -O3 -flto
@@ -27,6 +28,7 @@ CMD_STRIP=$(STRIP) $(1)
 define DO_STRIP
 	$(call CMD_STRIP,$(1));
 endef
+RUST_LIB = $(RUST_RELEASE_LIB)
 endif
 
 ifeq ($(DEBUG),0)
@@ -267,5 +269,5 @@ $(BINTOC_EXE): ../Shaders/bintoc.c
 sinclude $(OBJS:.o=.d)
 sinclude $(SHADER_OBJS:%.o=../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/%.d)
 
-.PHONY:	clean debug release
+.PHONY:	clean debug release FORCE_RUN
 .DEFAULT_GOAL := $(DEFAULT_TARGET)

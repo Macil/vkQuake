@@ -214,8 +214,14 @@ if opus_dep.found() and opusfile_dep.found()
     cflags += '-DUSE_CODEC_OPUS'
 endif
 
+cargo_options = [ '--manifest-path', meson.project_source_root() / 'rust/Cargo.toml' ]
+
 if get_option('buildtype').startswith('debug')
     cflags += '-D_DEBUG'
+    rust_target = 'debug'
+else
+    cargo_options += [ '--release' ]
+    rust_target = 'release'
 endif
 
 if get_option('do_userdirs').enabled()
@@ -226,4 +232,17 @@ incdirs = [
     'Quake/mimalloc',
 ]
 
-executable('vkquake', [srcs, shaders_c], dependencies : deps, include_directories : incdirs, c_args : cflags, c_pch: ['Quake/quakedef.h', 'Quake/quakedef.c'])
+cargo = find_program('cargo', required: true)
+
+cargo_build = custom_target(
+  'cargo-build',
+  build_always_stale: true,
+  output: 'librust.a',
+  console: true,
+  command: [
+    cargo, 'build', cargo_options, '&&',
+    'cp', meson.project_source_root() / 'rust/target' / rust_target / 'librust.a', '@OUTPUT@'
+  ]
+)
+
+executable('vkquake', [srcs, shaders_c, cargo_build], dependencies : deps, include_directories : incdirs, c_args : cflags, c_pch: ['Quake/quakedef.h', 'Quake/quakedef.c'])

@@ -8,6 +8,8 @@ RUN apt-get update \
  && apt-get update \
  && apt-get install -y \
 	build-essential \
+	curl \
+	clang-10 \
 	file \
 	fuse \
 	unzip \
@@ -44,8 +46,14 @@ RUN cd /tmp \
  && rm SDL2-2.28.5.tar.gz \
  && cd /tmp/SDL2-2.28.5 \
  && ./configure \
- && make -j \
+ && make -j $(nproc) \
  && make install
+
+ENV RUSTUP_HOME=/rust
+ENV CARGO_HOME=/cargo
+ENV PATH=/cargo/bin:/rust/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --no-modify-path
 
 RUN cd /tmp \
  && wget https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-linux.zip \
