@@ -25,6 +25,9 @@ MP3LIB = mad
 # which library to use for ogg decoding: vorbis or tremor
 VORBISLIB = vorbis
 
+RUST_DEBUG_LIB = ../rust/target/i686-pc-windows-gnu/debug/librust.a
+RUST_RELEASE_LIB = ../rust/target/i686-pc-windows-gnu/release/librust.a
+
 # ---------------------------
 # build variables
 # ---------------------------
@@ -74,7 +77,10 @@ CFLAGS += $(VULKAN_INC)
 
 COMMON_LIBS:= -lwinmm -lpsapi -lbcrypt
 
-LIBS := $(COMMON_LIBS) $(NET_LIBS) $(CODEC_LINK) $(CODECLIBS) $(VULKAN_LINK) $(VULKAN_LIBS)
+# These come from running "cd rust && RUSTFLAGS='--print native-static-libs' cargo build"
+RUST_LIBS := -lbcrypt -lntdll -lkernel32 -ladvapi32 -luserenv -lkernel32 -lkernel32 -lws2_32 -lbcrypt
+
+LIBS := $(COMMON_LIBS) $(NET_LIBS) $(CODEC_LINK) $(CODECLIBS) $(VULKAN_LINK) $(VULKAN_LIBS) $(RUST_LIBS)
 
 # ---------------------------
 # targets / rules
@@ -84,8 +90,14 @@ all: $(DEFAULT_TARGET) dll
 %.res: ../Windows/%.rc
 	$(WINDRES) -I../Windows --output-format=coff --target=pe-i386 -o $@ $<
 
-vkQuake.exe: $(SHADER_OBJS) $(OBJS) $(SYSOBJ_RES)
-	$(LINKER) $(SHADER_OBJS) $(OBJS) $(SYSOBJ_RES) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
+$(RUST_DEBUG_LIB):	FORCE_RUN
+	cd ../rust && cargo build --target i686-pc-windows-gnu
+
+$(RUST_RELEASE_LIB):	FORCE_RUN
+	cd ../rust && cargo build --release --target i686-pc-windows-gnu
+
+vkQuake.exe: $(SHADER_OBJS) $(OBJS) $(SYSOBJ_RES) $(RUST_LIB)
+	$(LINKER) $(SHADER_OBJS) $(OBJS) $(SYSOBJ_RES) $(RUST_LIB) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
 	$(call DO_STRIP,$@)
 
 dll:
@@ -102,3 +114,4 @@ clean:
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.c \
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.spv \
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.d
+	cd ../rust && cargo clean

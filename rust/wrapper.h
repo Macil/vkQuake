@@ -1,0 +1,1 @@
+#include "../Quake/quakedef.h"

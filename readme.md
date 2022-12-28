@@ -57,6 +57,8 @@ Prerequisites:
 * [Git for Windows](https://github.com/git-for-windows/git/releases)
 * A [Vulkan-capable GPU](https://en.wikipedia.org/wiki/Vulkan_(API)#Compatibility) with the appropriate drivers installed
 * Install the latest [Vulkan SDK](https://vulkan.lunarg.com/sdk/home). Log out and back in after installation to make sure environment variables are set.
+* Install Rust using rustup: https://www.rust-lang.org/tools/install
+* Install LLVM by running "LLVM-VERSION-win64.exe" (or "-win32.exe") file from https://github.com/llvm/llvm-project/releases. This is needed for rust-bindgen.
 
 ### Visual Studio
 
@@ -73,13 +75,15 @@ To compile vkQuake, first install the build dependencies:
 
 Ubuntu:
 ~~~
-apt-get install git meson gcc glslang-tools spirv-tools libsdl2-dev libvulkan-dev libvorbis-dev libmad0-dev libx11-xcb-dev
+apt-get install git meson gcc glslang-tools spirv-tools clang libsdl2-dev libvulkan-dev libvorbis-dev libmad0-dev libx11-xcb-dev
 ~~~
 
 Arch Linux:
 ~~~
-pacman -S git meson flac glibc libgl libmad libvorbis libx11 sdl2 vulkan-headers glslang spirv-tools
+pacman -S git meson clang flac glibc libgl libmad libvorbis libx11 sdl2 vulkan-headers glslang spirv-tools
 ~~~
+
+Install Rust using rustup: https://www.rust-lang.org/tools/install
 
 Then clone the vkQuake repo:
 
@@ -112,6 +116,8 @@ To compile vkQuake, first install the build dependencies with Homebrew:
 ~~~
 brew install molten-vk vulkan-headers glslang spirv-tools sdl2 libvorbis flac opus opusfile flac mad meson pkgconfig
 ~~~
+
+Install Rust using rustup: https://www.rust-lang.org/tools/install
 
 Then clone the vkQuake repo:
 

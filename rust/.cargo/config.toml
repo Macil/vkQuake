@@ -1,0 +1,4 @@
+# Print the native static libraries that need to be linked in, so if anything
+# new is ever needed then it's shown in the build output.
+[target.'cfg(target_family = "windows")']
+rustflags = ["--print=native-static-libs"]
