@@ -25,6 +25,9 @@ MP3LIB = mpg123
 # which library to use for ogg decoding: vorbis or tremor
 VORBISLIB = vorbis
 
+RUST_DEBUG_LIB = ../rust/target/debug/librust.a
+RUST_RELEASE_LIB = ../rust/target/release/librust.a
+
 # ---------------------------
 # build variables
 # ---------------------------
@@ -91,8 +94,14 @@ LIBS := $(COMMON_LIBS) $(CODECLIBS)
 # ---------------------------
 all: $(BINTOC_EXE) .WAIT $(DEFAULT_TARGET)
 
-vkquake: $(SHADER_OBJS) $(OBJS)
-	$(LINKER) $(SHADER_OBJS) $(OBJS) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
+$(RUST_DEBUG_LIB):	FORCE_RUN
+	cd ../rust && cargo build
+
+$(RUST_RELEASE_LIB):	FORCE_RUN
+	cd ../rust && cargo build --release
+
+vkquake: $(SHADER_OBJS) $(OBJS) $(RUST_LIB)
+	$(LINKER) $(SHADER_OBJS) $(OBJS) $(RUST_LIB) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
 	$(call DO_STRIP,$@)
 
 release: vkquake
@@ -105,6 +114,7 @@ clean:
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.c \
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.spv \
 	../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/*.d
+	cd ../rust && cargo clean
 
 prefix ?= /usr
 exec_prefix ?= $(prefix)

@@ -92,6 +92,7 @@ Prerequisites:
 * [Git for Windows](https://github.com/git-for-windows/git/releases)
 * A [Vulkan-capable GPU](https://en.wikipedia.org/wiki/Vulkan_(API)#Compatibility) with the appropriate drivers installed
 * Install the latest [Vulkan SDK](https://vulkan.lunarg.com/sdk/home). Log out and back in after installation to make sure environment variables are set.
+* Install Rust using rustup: https://www.rust-lang.org/tools/install
 
 #### Visual Studio
 
@@ -129,18 +130,20 @@ To compile vkQuake, first install the build dependencies:
 
 Ubuntu:
 ~~~
-apt-get install git meson gcc glslang-tools spirv-tools libsdl2-dev libvulkan-dev libvorbis-dev libmpg123-dev libx11-xcb-dev
+apt-get install git meson gcc glslang-tools spirv-tools clang libsdl2-dev libvulkan-dev libvorbis-dev libmpg123-dev libx11-xcb-dev
 ~~~
 
 Arch Linux:
 ~~~
-pacman -S git meson flac glibc libgl mpg123 libvorbis libx11 sdl2 vulkan-headers glslang spirv-tools
+pacman -S git meson clang flac glibc libgl mpg123 libvorbis libx11 sdl2 vulkan-headers glslang spirv-tools
 ~~~
 
 Fedora:
 ~~~
-dnf install git meson gcc glslang spirv-tools vulkan-loader-devel SDL2-devel mpg123-devel libvorbis-devel flac-devel opusfile-devel
+dnf install git meson clang gcc glslang spirv-tools vulkan-loader-devel SDL2-devel mpg123-devel libvorbis-devel flac-devel opusfile-devel
 ~~~
+
+Install Rust using rustup: https://www.rust-lang.org/tools/install
 
 Then clone the vkQuake repo:
 
@@ -173,6 +176,8 @@ To compile vkQuake, first install the build dependencies with Homebrew:
 ~~~
 brew install molten-vk vulkan-headers glslang spirv-tools sdl2 libvorbis flac opus opusfile flac mpg123 meson pkgconfig
 ~~~
+
+Install Rust using rustup: https://www.rust-lang.org/tools/install
 
 Then clone the vkQuake repo:
 

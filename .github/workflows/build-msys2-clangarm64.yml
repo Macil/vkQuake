@@ -15,13 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-        - { name: Windows (clangarm64),  os: windows-11-arm, shell: 'msys2 {0}', msystem: clangarm64, msys-env: mingw-w64-clang-aarch64, makefile: Makefile.w64a }
+        - { name: Windows (clangarm64),  os: windows-11-arm, shell: 'msys2 {0}', msystem: clangarm64, msys-env: mingw-w64-clang-aarch64, makefile: Makefile.w64a, rust-target: aarch64-pc-windows-gnullvm }
 
     steps:
     - name: Set up MSYS2
       uses: msys2/setup-msys2@v2
       with:
         msystem: ${{ matrix.platform.msystem }}
+        path-type: inherit
         install: base-devel
           ${{ matrix.platform.msys-env }}-gcc-compat
           ${{ matrix.platform.msys-env }}-glslang
@@ -37,6 +38,22 @@ jobs:
           ${{ matrix.platform.msys-env }}-libxmp
 
     - uses: actions/checkout@v4
+
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          rust/target/
+        key: ${{ runner.os }}-${{ matrix.platform.msystem }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.platform.msystem }}-cargo-
+    - name: Add Rust target
+      run: rustup target add ${{ matrix.platform.rust-target }}
 
     - name: Build MinGW
       run: |
