@@ -12,6 +12,8 @@ RUN apt-get update \
 	wget \
 	build-essential \
 	cmake \
+	curl \
+	clang-10 \
 	file \
 	fuse \
 	ninja-build \
@@ -66,6 +68,11 @@ RUN cd /tmp \
 ENV VULKAN_SDK=/opt/vulkan-sdk/x86_64
 ENV PATH=${VULKAN_SDK}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${VULKAN_SDK}/lib
+
+ENV RUSTUP_HOME=/rust
+ENV CARGO_HOME=/cargo
+ENV PATH=/cargo/bin:/rust/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --no-modify-path
 
 RUN cd /opt \
  && wget https://github.com/mesonbuild/meson/releases/download/${MESON_VER}/meson-${MESON_VER}.tar.gz \

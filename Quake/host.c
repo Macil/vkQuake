@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include "steam.h"
 #include "tasks.h"
+#include "cbindgen/librust.h"
 #include <setjmp.h>
 #ifdef _DEBUG
 #include "gl_heap.h"
@@ -974,6 +975,8 @@ static void _Host_Frame (double time)
 	if (host_speeds.value)
 		time3 = Sys_DoubleTime ();
 
+	Rust_Frame ();
+
 	if (!isDedicated)
 	{
 		// get new key events
@@ -1161,6 +1164,8 @@ void Host_Init (void)
 	com_argc = host_parms->argc;
 	com_argv = host_parms->argv;
 
+	Rust_Init_Early ();
+
 	Mem_Init ();
 	Tasks_Init ();
 	Cbuf_Init ();
@@ -1221,6 +1226,8 @@ void Host_Init (void)
 	PScript_InitParticles ();
 #endif
 	LOC_Init (); // for 2021 rerelease support.
+
+	Rust_Init ();
 
 	host_initialized = true;
 	Con_Printf ("\n========= Quake Initialized =========\n\n");
