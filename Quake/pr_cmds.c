@@ -927,7 +927,14 @@ static void PF_cvar (void)
 
 	str = G_STRING (OFS_PARM0);
 
-	G_FLOAT (OFS_RETURN) = Cvar_VariableValue (str);
+	if (workaround_pr_scr_sbarscale.value >= 0 && strcmp (str, "scr_sbarscale") == 0)
+	{
+		G_FLOAT (OFS_RETURN) = workaround_pr_scr_sbarscale.value;
+	}
+	else
+	{
+		G_FLOAT (OFS_RETURN) = Cvar_VariableValue (str);
+	}
 }
 
 /*
