@@ -93,6 +93,11 @@ cvar_t scr_autoclock = {"scr_autoclock", "1", CVAR_ARCHIVE};
 // johnfitz
 cvar_t scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
 
+// Workaround for https://github.com/Shpoike/Quakespasm/issues/119.
+// Default value is good for Arcane Dimensions running in 16:9.
+// Set to -1 to disable the workaround.
+cvar_t workaround_pr_scr_sbarscale = {"workaround_pr_scr_sbarscale", "2.808"};
+
 cvar_t scr_viewsize = {"viewsize", "100", CVAR_ARCHIVE};
 cvar_t scr_fov = {"fov", "90", CVAR_ARCHIVE}; // 10 - 170
 cvar_t scr_fov_adapt = {"fov_adapt", "1", CVAR_ARCHIVE};
@@ -575,6 +580,9 @@ void SCR_Init (void)
 	Cvar_SetCallback (&scr_relsbarscale, &SCR_UpdateRelativeScale_f);
 	Cvar_SetCallback (&scr_relcrosshairscale, &SCR_UpdateRelativeScale_f);
 	Cvar_SetCallback (&scr_relconscale, &SCR_UpdateRelativeScale_f);
+
+	Cvar_RegisterVariable (&workaround_pr_scr_sbarscale);
+
 	SCR_UpdateRelativeScale ();
 
 	if (CFG_OpenConfig ("config.cfg") == 0)
