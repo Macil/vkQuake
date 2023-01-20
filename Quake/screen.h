@@ -61,4 +61,6 @@ extern cvar_t scr_scale;
 extern cvar_t scr_crosshairscale;
 // johnfitz
 
+extern cvar_t workaround_pr_scr_sbarscale;
+
 #endif /* _QUAKE_SCREEN_H */
