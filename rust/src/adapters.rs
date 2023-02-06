@@ -1,4 +1,8 @@
-pub mod common;
+// This lint which suggests #[non_exhaustive] instead of using an empty private field is
+// not useful because it makes it possible to construct some types outside of this module.
+#![allow(clippy::manual_non_exhaustive)]
+
+mod common;
 
 // Allow the actual implementation to be compiled in tests to make sure it compiles,
 // and because it must be enabled in tests for rust-analyzer to see it at all by default.

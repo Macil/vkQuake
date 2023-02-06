@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 pub mod console;
+pub mod cvar;
 pub mod game;
 
 pub fn game_pref_path() -> PathBuf {

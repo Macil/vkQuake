@@ -5,6 +5,10 @@ mod axum_helpers;
 mod middleware;
 mod tracing_init;
 
+use adapters::{
+    cvar::{Cvar, CvarFlags},
+    game::GameInit,
+};
 use axum::{
     extract,
     routing::{get, patch},
@@ -19,22 +23,10 @@ use tokio::runtime::Runtime;
 use tower::ServiceBuilder;
 use tower_http::{trace::TraceLayer, validate_request::ValidateRequestHeaderLayer};
 
-static RUNTIME: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
+/// Should only need to be used directly by synchronous code called from C.
+pub(crate) static RUNTIME: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
 
-/// # Safety
-/// Must only be called by Quake on the main game thread.
-#[no_mangle]
-#[allow(unused_unsafe)]
-pub unsafe extern "C" fn Rust_Frame() {
-    unsafe {
-        adapters::game::rust_frame();
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn Rust_Init() {
-    tracing_init::init();
-
+pub(crate) fn init(game_init: &mut GameInit) {
     // TODO
     // add the following cvars:
     // - remote_api_http_enabled, default 1
@@ -59,6 +51,17 @@ pub extern "C" fn Rust_Init() {
     // permission_level = "game" // (game, admin, none)
     // last_seen = 2023-01-01T12:00:00Z
 
+    let remote_api_http_enabled = Cvar::register(
+        game_init,
+        "remote_api_http_enabled",
+        "1",
+        CvarFlags::CVAR_ARCHIVE,
+    );
+
+    Cvar::load_early(game_init, &[remote_api_http_enabled.name()]).unwrap();
+
+    // TODO react to cvar changes
+    let remote_api_http_enabled_value = remote_api_http_enabled.value(&game_init.game);
     RUNTIME.spawn(async move {
         tokio::spawn(async move {
             if let Err(e) = listen_on_unix_socket().await {
@@ -66,8 +69,10 @@ pub extern "C" fn Rust_Init() {
             }
         });
 
-        if let Err(e) = listen_on_tcp_socket().await {
-            tracing::error!("Error listening on tcp socket: {}", e);
+        if remote_api_http_enabled_value == 1.0 {
+            if let Err(e) = listen_on_tcp_socket().await {
+                tracing::error!("Error listening on tcp socket: {}", e);
+            }
         }
     });
 }

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 pub mod console;
+pub mod cvar;
 pub mod game;
 mod raw_bindings;
 

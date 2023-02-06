@@ -1011,6 +1011,8 @@ void Host_Init (void)
 	com_argc = host_parms->argc;
 	com_argv = host_parms->argv;
 
+	Rust_Init_Early ();
+
 	Mem_Init ();
 	Tasks_Init ();
 	Cbuf_Init ();

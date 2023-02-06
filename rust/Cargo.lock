@@ -765,6 +765,7 @@ dependencies = [
  "anyhow",
  "axum",
  "bindgen",
+ "bitflags",
  "http",
  "http-body",
  "hyper",

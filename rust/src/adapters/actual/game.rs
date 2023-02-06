@@ -1,24 +1,24 @@
 use super::raw_bindings::{cmd_source_t_src_command, svs, Cmd_ExecuteString};
+use crate::tracing_init;
 use once_cell::sync::Lazy;
 use std::ffi::CString;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::{SendError, TryRecvError};
 use tokio::sync::oneshot;
 
-pub type FrameCallback = Box<dyn FnOnce() + Send + 'static>;
+type FrameCallback = Box<dyn FnOnce(&mut Game) + Send + 'static>;
 
 static mut FRAME_QUEUE: Lazy<(mpsc::Sender<FrameCallback>, mpsc::Receiver<FrameCallback>)> =
     Lazy::new(|| mpsc::channel(200));
-pub static FRAME_QUEUE_TX: Lazy<&mpsc::Sender<FrameCallback>> =
-    Lazy::new(|| unsafe { &FRAME_QUEUE.0 });
+static FRAME_QUEUE_TX: Lazy<&mpsc::Sender<FrameCallback>> = Lazy::new(|| unsafe { &FRAME_QUEUE.0 });
 
-/// # Safety
-/// Must only be called on the main game thread.
-pub unsafe fn rust_frame() {
+#[no_mangle]
+pub unsafe extern "C" fn Rust_Frame() {
+    let mut game = Game { _field: () };
     let rx = unsafe { &mut FRAME_QUEUE.1 };
     loop {
         match rx.try_recv() {
-            Ok(f) => f(),
+            Ok(f) => f(&mut game),
             Err(TryRecvError::Empty) => break,
             Err(TryRecvError::Disconnected) => panic!("FRAME_QUEUE disconnected"),
         }
@@ -27,17 +27,15 @@ pub unsafe fn rust_frame() {
 
 pub struct Game {
     // Require that Game is only instantiated within this module.
-    #[allow(dead_code)]
-    field: (),
+    _field: (),
 }
 
 impl Game {
     pub async fn run_in_game_thread(f: impl FnOnce(&Game) + Send + 'static) {
         // TODO allow multiple run_in_game_thread callbacks to run concurrently
-        let game = Game { field: () };
         FRAME_QUEUE_TX
-            .send(Box::new(move || {
-                f(&game);
+            .send(Box::new(move |game| {
+                f(game);
             }))
             .await
             // Replace the error with something that doesn't reference the callback
@@ -50,7 +48,7 @@ impl Game {
         f: impl FnOnce(&Game) -> R + Send + 'static,
     ) -> Result<R, oneshot::error::RecvError> {
         let (tx, rx) = oneshot::channel();
-        Self::run_in_game_thread(|game| {
+        Self::run_in_game_thread(move |game| {
             let _ = tx.send(f(game));
         })
         .await;
@@ -59,11 +57,8 @@ impl Game {
 
     #[allow(dead_code)]
     pub async fn run_in_game_thread_mut(f: impl FnOnce(&mut Game) + Send + 'static) {
-        let mut game = Game { field: () };
         FRAME_QUEUE_TX
-            .send(Box::new(move || {
-                f(&mut game);
-            }))
+            .send(Box::new(f))
             .await
             // Replace the error with something that doesn't reference the callback
             // type, so that the error implements Debug.
@@ -127,9 +122,34 @@ impl Game {
 
     #[allow(dead_code)]
     pub fn rcon(&mut self, cmd: &str) {
+        // TODO return output string
         let cmd = CString::new(cmd).unwrap();
         unsafe {
             Cmd_ExecuteString(cmd.as_ptr(), cmd_source_t_src_command);
         }
     }
+}
+
+pub struct GameInit {
+    pub game: Game,
+    // Require that Game is only instantiated within this module.
+    _field: (),
+}
+
+/// Sets up things that could come to be depended on by C code that's called earlier than Rust_Init.
+#[no_mangle]
+pub unsafe extern "C" fn Rust_Init_Early() {
+    tracing_init::init();
+}
+
+// Disabled in tests because the rest of the crate expects mock Game references instead of real ones.
+#[cfg(not(test))]
+#[no_mangle]
+pub unsafe extern "C" fn Rust_Init() {
+    let mut game_init = GameInit {
+        game: Game { _field: () },
+        _field: (),
+    };
+
+    crate::init(&mut game_init);
 }

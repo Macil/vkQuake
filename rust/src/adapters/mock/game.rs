@@ -1,13 +1,8 @@
 use tokio::sync::oneshot;
 
-pub fn rust_frame() {
-    unimplemented!();
-}
-
 pub struct Game {
     // Require that Game is only instantiated once through the new constructor
-    #[allow(dead_code)]
-    field: (),
+    _field: (),
 }
 
 impl Game {
@@ -40,4 +35,21 @@ impl Game {
     pub fn rcon(&mut self, cmd: &str) {
         unimplemented!();
     }
+}
+
+pub struct GameInit {
+    pub game: Game,
+    // Require that Game is only instantiated within this module.
+    _field: (),
+}
+
+// This function exists just so functions like crate::init don't show as unused functions
+// in test builds.
+fn dummy_rust_init() {
+    let mut game_init = GameInit {
+        game: Game { _field: () },
+        _field: (),
+    };
+
+    crate::init(&mut game_init);
 }
