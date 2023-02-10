@@ -51,6 +51,12 @@ pub(crate) fn init(game_init: &mut GameInit) {
     // permission_level = "game" // (game, admin, none)
     // last_seen = 2023-01-01T12:00:00Z
 
+    // TODO support cvars and commands that can't be executed on client
+    // by maps (PR_stuffcmd) or server packet or demos (SVC_STUFFTEXT). It looks like Cmd_ExecuteString's
+    // cmd_source parameter contains some logic like this for console commands already.
+    // I'm just not sure if it distinguishes commands from maps vs the player and what it allows specifically.
+    // Also look at how Host_Savegame_f checks cmd_source.
+
     let remote_api_http_enabled = Cvar::register(
         game_init,
         "remote_api_http_enabled",
