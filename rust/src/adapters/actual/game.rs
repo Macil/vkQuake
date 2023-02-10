@@ -1,6 +1,7 @@
-use super::raw_bindings::{cmd_source_t_src_command, svs, Cmd_ExecuteString};
+use super::raw_bindings::{cmd_source_t_src_command, svs, Cmd_ExecuteString, Con_Redirect};
 use crate::tracing_init;
 use once_cell::sync::Lazy;
+use std::cell::RefCell;
 use std::ffi::CString;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::{SendError, TryRecvError};
@@ -11,6 +12,10 @@ type FrameCallback = Box<dyn FnOnce(&mut Game) + Send + 'static>;
 static mut FRAME_QUEUE: Lazy<(mpsc::Sender<FrameCallback>, mpsc::Receiver<FrameCallback>)> =
     Lazy::new(|| mpsc::channel(200));
 static FRAME_QUEUE_TX: Lazy<&mpsc::Sender<FrameCallback>> = Lazy::new(|| unsafe { &FRAME_QUEUE.0 });
+
+thread_local! {
+    static REDIRECTED_CONSOLE_OUTPUT: RefCell<Vec<String>> = RefCell::default();
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn Rust_Frame() {
@@ -120,13 +125,24 @@ impl Game {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn rcon(&mut self, cmd: &str) {
-        // TODO return output string
+    // TODO create rcon_tab_autocomplete function that returns a list of possible completions
+    pub fn rcon(&mut self, cmd: &str) -> String {
+        unsafe extern "C" fn rcon_redirect(s: *const std::ffi::c_char) {
+            let s = unsafe { std::ffi::CStr::from_ptr(s) };
+            REDIRECTED_CONSOLE_OUTPUT.with(|r| {
+                r.borrow_mut().push(s.to_string_lossy().into_owned());
+            });
+        }
+
+        assert!(REDIRECTED_CONSOLE_OUTPUT.with(|r| r.borrow().is_empty()));
+
         let cmd = CString::new(cmd).unwrap();
         unsafe {
+            Con_Redirect(Some(rcon_redirect));
             Cmd_ExecuteString(cmd.as_ptr(), cmd_source_t_src_command);
+            Con_Redirect(None);
         }
+        REDIRECTED_CONSOLE_OUTPUT.with(|r| r.take()).concat()
     }
 }
 
