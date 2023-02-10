@@ -32,7 +32,7 @@ impl Game {
 
     pub fn set_player_health(&mut self, health: f32) {}
 
-    pub fn rcon(&mut self, cmd: &str) {
+    pub fn rcon(&mut self, cmd: &str) -> String {
         unimplemented!();
     }
 }
