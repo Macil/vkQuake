@@ -11,7 +11,7 @@ use adapters::{
 };
 use axum::{
     extract,
-    routing::{get, patch},
+    routing::{get, patch, post},
     Json, Router,
 };
 use axum_helpers::QuakeAPIResponseError;
@@ -108,6 +108,7 @@ fn create_app(is_unix_socket: bool) -> Router {
     let mut app = Router::new()
         .route("/", get(root))
         .route("/entities", get(entities))
+        .route("/rcon", post(rcon))
         .route("/player", get(player))
         .route("/player", patch(patch_player))
         .layer(
@@ -141,6 +142,16 @@ struct PatchPlayerEntity {
     health: Option<f32>,
 }
 
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+struct PostRconRequestBody {
+    command: String,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+struct PostRconResponse {
+    output: String,
+}
+
 async fn player() -> Result<Json<Option<PlayerEntity>>, QuakeAPIResponseError> {
     let player_health =
         adapters::game::Game::run_in_game_thread_with_result(|game| game.player_health()).await?;
@@ -163,4 +174,14 @@ async fn patch_player(
 
 async fn entities() -> &'static str {
     "TODO all entities in JSON form"
+}
+
+async fn rcon(
+    extract::Json(body): extract::Json<PostRconRequestBody>,
+) -> Result<Json<PostRconResponse>, QuakeAPIResponseError> {
+    let output = adapters::game::Game::run_in_game_thread_mut_with_result(move |game| {
+        game.rcon(&body.command)
+    })
+    .await?;
+    Ok(Json(PostRconResponse { output }))
 }
