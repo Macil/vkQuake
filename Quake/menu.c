@@ -1204,14 +1204,6 @@ enum
 	OPTIONS_ITEMS
 };
 
-enum
-{
-	ALWAYSRUN_OFF = 0,
-	ALWAYSRUN_VANILLA,
-	ALWAYSRUN_QUAKESPASM,
-	ALWAYSRUN_ITEMS
-};
-
 #define SLIDER_SIZE	  10
 #define SLIDER_XPOS	  (MENU_VALUE_X + 6)
 #define SLIDER_EXTENT ((SLIDER_SIZE - 1) * 8)
@@ -1259,7 +1251,6 @@ M_GetSliderPos (float low, float high, float current, qboolean backward, qboolea
 
 void M_AdjustSliders (int dir, qboolean mouse)
 {
-	int	  curr_alwaysrun, target_alwaysrun;
 	float f, clamped_mouse = CLAMP (SLIDER_START, (float)m_mouse_x, SLIDER_END);
 
 	if (fabsf (clamped_mouse - (float)m_mouse_x) > 12.0f)
@@ -1328,33 +1319,12 @@ void M_AdjustSliders (int dir, qboolean mouse)
 		break;
 
 	case OPT_ALWAYRUN: // always run
-		if (cl_alwaysrun.value)
-			curr_alwaysrun = ALWAYSRUN_QUAKESPASM;
-		else if (cl_forwardspeed.value > 200)
-			curr_alwaysrun = ALWAYSRUN_VANILLA;
-		else
-			curr_alwaysrun = ALWAYSRUN_OFF;
+		Cvar_SetValue ("cl_alwaysrun", !(cl_alwaysrun.value || cl_forwardspeed.value > 200));
 
-		target_alwaysrun = (ALWAYSRUN_ITEMS + curr_alwaysrun + dir) % ALWAYSRUN_ITEMS;
-
-		if (target_alwaysrun == ALWAYSRUN_VANILLA)
-		{
-			Cvar_SetValue ("cl_alwaysrun", 0);
-			Cvar_SetValue ("cl_forwardspeed", 400);
-			Cvar_SetValue ("cl_backspeed", 400);
-		}
-		else if (target_alwaysrun == ALWAYSRUN_QUAKESPASM)
-		{
-			Cvar_SetValue ("cl_alwaysrun", 1);
-			Cvar_SetValue ("cl_forwardspeed", 200);
-			Cvar_SetValue ("cl_backspeed", 200);
-		}
-		else // ALWAYSRUN_OFF
-		{
-			Cvar_SetValue ("cl_alwaysrun", 0);
-			Cvar_SetValue ("cl_forwardspeed", 200);
-			Cvar_SetValue ("cl_backspeed", 200);
-		}
+		// The vanilla "always run" option set these two CVARs, so reset them too when changing
+		// in case the user previously used that option.
+		Cvar_SetValue ("cl_forwardspeed", 200);
+		Cvar_SetValue ("cl_backspeed", 200);
 		break;
 
 	case OPT_INVMOUSE: // invert mouse
@@ -1497,12 +1467,7 @@ void M_Options_Draw (cb_context_t *cbx)
 
 	// OPT_ALWAYRUN:
 	M_Print (cbx, MENU_LABEL_X, 32 + 8 * OPT_ALWAYRUN, M_MenuLabel ("Always Run"));
-	if (cl_alwaysrun.value)
-		M_Print (cbx, MENU_VALUE_X, 32 + 8 * OPT_ALWAYRUN, "quakespasm");
-	else if (cl_forwardspeed.value > 200.0)
-		M_Print (cbx, MENU_VALUE_X, 32 + 8 * OPT_ALWAYRUN, "vanilla");
-	else
-		M_Print (cbx, MENU_VALUE_X, 32 + 8 * OPT_ALWAYRUN, "off");
+	M_DrawCheckbox (cbx, MENU_VALUE_X, 32 + 8 * OPT_ALWAYRUN, cl_alwaysrun.value || cl_forwardspeed.value > 200.0);
 
 	// OPT_INVMOUSE:
 	M_Print (cbx, MENU_LABEL_X, 32 + 8 * OPT_INVMOUSE, M_MenuLabel ("Invert Mouse"));
