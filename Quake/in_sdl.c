@@ -493,18 +493,6 @@ void IN_Commands (void)
 		IN_JoyKeyEvent (
 			joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_LEFTY] > stickthreshold, newaxisstate.axisvalue[SDL_CONTROLLER_AXIS_LEFTY] > stickthreshold,
 			K_DOWNARROW, &joy_emulatedkeytimer[3]);
-		IN_JoyKeyEvent (
-			joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTX] < -stickthreshold, newaxisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTX] < -stickthreshold,
-			K_LEFTARROW, &joy_emulatedkeytimer[4]);
-		IN_JoyKeyEvent (
-			joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTX] > stickthreshold, newaxisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTX] > stickthreshold,
-			K_RIGHTARROW, &joy_emulatedkeytimer[5]);
-		IN_JoyKeyEvent (
-			joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTY] < -stickthreshold, newaxisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTY] < -stickthreshold,
-			K_UPARROW, &joy_emulatedkeytimer[6]);
-		IN_JoyKeyEvent (
-			joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTY] > stickthreshold, newaxisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTY] > stickthreshold,
-			K_DOWNARROW, &joy_emulatedkeytimer[7]);
 	}
 
 	// emit emulated keys for the analog triggers
