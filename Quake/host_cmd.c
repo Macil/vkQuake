@@ -890,6 +890,489 @@ static void Host_Randmap_f (void)
 	}
 }
 
+static qboolean Has_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_AXE:
+		if (!rogue)
+		{
+			// compatibility with alkaline which doesn't keep IT_AXE in STAT_ITEMS
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("weapons"));
+			if (val && (int)val->_float & weapon)
+				return true;
+		}
+		break;
+	case ALK_WEAPON_CHAINSAW:
+	case ALK_WEAPON_PLASMA:
+	case ALK_WEAPON_LASER_CANNON:
+	case ALK_WEAPON_PROXIMITY_GUN:
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("weapons"));
+		return (val && (int)val->_float & weapon);
+	}
+	}
+	return (int)sv_player->v.items & weapon;
+}
+
+static int Get_Nails_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_nails1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_nails;
+}
+
+static int Get_Rockets_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_rockets1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_rockets;
+}
+
+static int Get_Cells_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_cells1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_cells;
+}
+
+static qboolean Has_Ammo_For_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		return sv_player->v.ammo_shells >= 1;
+	case IT_SUPER_SHOTGUN:
+		return sv_player->v.ammo_shells >= 2;
+	case IT_NAILGUN:
+		return Get_Nails_Amount () >= 1;
+	case IT_SUPER_NAILGUN:
+		return Get_Nails_Amount () >= 2;
+	case IT_GRENADE_LAUNCHER:
+	case IT_ROCKET_LAUNCHER:
+		return Get_Rockets_Amount () >= 1;
+	case IT_LIGHTNING:
+	case HIT_LASER_CANNON:
+	case ALK_WEAPON_PLASMA:
+	case ALK_WEAPON_LASER_CANNON:
+		return Get_Cells_Amount () >= 1;
+	case HIT_MJOLNIR:
+		return Get_Cells_Amount () >= 15;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_lava_nails"));
+			return val && val->_float >= 1;
+		}
+		else // IT_AXE
+			return true;
+	case RIT_LAVA_SUPER_NAILGUN: // same as ALK_WEAPON_PROXIMITY_GUN
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_lava_nails"));
+			return val && val->_float >= 2;
+		}
+		else // ALK_WEAPON_PROXIMITY_GUN
+			return cl.stats[STAT_ROCKETS] >= 2;
+	case RIT_MULTI_GRENADE:
+	case RIT_MULTI_ROCKET:
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_multi_rockets"));
+			return val && val->_float >= 1;
+		}
+		break;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_plasma"));
+			return val && val->_float >= 1;
+		}
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+			return sv_player->v.ammo_rockets >= 1;
+		break;
+	case RIT_AXE:
+	case ALK_WEAPON_CHAINSAW:
+		return true;
+	}
+
+	Con_Printf ("ERROR: Has_Ammo_For_Weapon unrecognized weapon: 0x%x\n", weapon);
+	return false;
+}
+
+static void Switch_To_Weapon (int weapon)
+{
+	if (sv_player->v.weapon == weapon)
+		return;
+
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		sv_player->v.impulse = 2;
+		break;
+	case IT_SUPER_SHOTGUN:
+		sv_player->v.impulse = 3;
+		break;
+	case IT_NAILGUN:
+		sv_player->v.impulse = 4;
+		break;
+	case IT_SUPER_NAILGUN:
+		sv_player->v.impulse = 5;
+		break;
+	case IT_GRENADE_LAUNCHER:
+		sv_player->v.impulse = 6;
+		break;
+	case IT_ROCKET_LAUNCHER:
+		sv_player->v.impulse = 7;
+		break;
+	case IT_LIGHTNING:
+		if (sv_player->v.weapon == ALK_WEAPON_LASER_CANNON || sv_player->v.weapon == ALK_WEAPON_PLASMA)
+			sv_player->v.impulse = 228;
+		else
+			sv_player->v.impulse = 8;
+		break;
+	case HIT_LASER_CANNON:
+	case ALK_WEAPON_LASER_CANNON:
+		sv_player->v.impulse = 225;
+		break;
+	case HIT_MJOLNIR:
+	case ALK_WEAPON_CHAINSAW:
+		sv_player->v.impulse = 226;
+		break;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+			sv_player->v.impulse = 60;
+		else // IT_AXE
+			sv_player->v.impulse = 1;
+		break;
+	case RIT_LAVA_SUPER_NAILGUN:
+		if (rogue)
+			sv_player->v.impulse = 61;
+		else // ALK_WEAPON_PROXIMITY_GUN
+			sv_player->v.impulse = 229;
+		break;
+	case RIT_MULTI_GRENADE:
+		sv_player->v.impulse = 62;
+		break;
+	case RIT_MULTI_ROCKET:
+		sv_player->v.impulse = 63;
+		break;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+			sv_player->v.impulse = 64;
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+			sv_player->v.impulse = 227;
+		break;
+	case RIT_AXE:
+		sv_player->v.impulse = 1;
+		break;
+	case ALK_WEAPON_PLASMA:
+		sv_player->v.impulse = 227;
+		break;
+	default:
+		Con_Printf ("ERROR: Switch_To_Weapon unrecognized weapon: 0x%x\n", weapon);
+	}
+}
+
+// returns 0 on failure
+static int Parse_Weapon_Id (const char *arg)
+{
+	if (strlen (arg) == 1 && isdigit (arg[0]))
+	{
+		int arg_num = atoi (arg);
+		if (arg_num == 1)
+			return rogue ? RIT_AXE : IT_AXE;
+		if (arg_num >= 2 && arg_num <= 8)
+			return IT_SHOTGUN << (arg_num - 2);
+		if (arg_num == 9)
+			return HIT_LASER_CANNON;
+		if (arg_num == 0)
+			return HIT_MJOLNIR;
+		return 0;
+	}
+
+	if (rogue)
+	{
+		if (!strcmp (arg, "4a"))
+			return RIT_LAVA_NAILGUN;
+		if (!strcmp (arg, "5a"))
+			return RIT_LAVA_SUPER_NAILGUN;
+		if (!strcmp (arg, "6a"))
+			return RIT_MULTI_GRENADE;
+		if (!strcmp (arg, "7a"))
+			return RIT_MULTI_ROCKET;
+		if (!strcmp (arg, "8a"))
+			return RIT_PLASMA_GUN;
+	}
+
+	if (hipnotic)
+	{
+		if (!strcmp (arg, "6a"))
+			return HIT_PROXIMITY_GUN;
+	}
+
+	if (!strcmp (arg, "1a"))
+		return ALK_WEAPON_CHAINSAW;
+	if (!strcmp (arg, "6a"))
+		return ALK_WEAPON_PROXIMITY_GUN;
+	if (!strcmp (arg, "8a"))
+		return ALK_WEAPON_LASER_CANNON;
+	if (!strcmp (arg, "8b"))
+		return ALK_WEAPON_PLASMA;
+
+	return 0;
+}
+
+// returns number of written elements, or -1 on error
+static int Parse_Weapon_Id_Or_Group (int *dest, size_t dest_size, const char *arg)
+{
+	if (dest_size == 0)
+		return 0;
+
+	int simple_parse = Parse_Weapon_Id (arg);
+	if (simple_parse != 0)
+	{
+		dest[0] = simple_parse;
+		return 1;
+	}
+
+	qboolean reverse = false;
+	if (arg[0] == '-')
+	{
+		reverse = true;
+		arg++;
+	}
+	int written = 0;
+
+	if (!strcmp (arg, "shotguns"))
+	{
+		dest[written++] = IT_SUPER_SHOTGUN;
+		if (written == dest_size)
+			goto parse_weapon_group_end;
+		dest[written++] = IT_SHOTGUN;
+	}
+	else if (!strcmp (arg, "nailguns"))
+	{
+		if (rogue)
+		{
+			dest[written++] = RIT_LAVA_SUPER_NAILGUN;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		dest[written++] = IT_SUPER_NAILGUN;
+		if (written == dest_size)
+			goto parse_weapon_group_end;
+		if (rogue)
+		{
+			dest[written++] = RIT_LAVA_NAILGUN;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		dest[written++] = IT_NAILGUN;
+	}
+	else if (!strcmp (arg, "rockets"))
+	{
+		if (rogue)
+		{
+			dest[written++] = RIT_MULTI_ROCKET;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		dest[written++] = IT_ROCKET_LAUNCHER;
+		if (written == dest_size)
+			goto parse_weapon_group_end;
+		if (rogue)
+		{
+			dest[written++] = RIT_MULTI_GRENADE;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		else if (hipnotic)
+		{
+			dest[written++] = HIT_PROXIMITY_GUN;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		else
+		{
+			dest[written++] = ALK_WEAPON_PROXIMITY_GUN;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		dest[written++] = IT_GRENADE_LAUNCHER;
+	}
+	else if (!strcmp (arg, "other"))
+	{
+		if (hipnotic)
+		{
+			dest[written++] = HIT_MJOLNIR;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+			dest[written++] = HIT_LASER_CANNON;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		else if (rogue)
+		{
+			dest[written++] = RIT_PLASMA_GUN;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		else
+		{
+			dest[written++] = ALK_WEAPON_PLASMA;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+			dest[written++] = ALK_WEAPON_LASER_CANNON;
+			if (written == dest_size)
+				goto parse_weapon_group_end;
+		}
+		dest[written++] = IT_LIGHTNING;
+		if (written == dest_size)
+			goto parse_weapon_group_end;
+		dest[written++] = ALK_WEAPON_CHAINSAW;
+		if (written == dest_size)
+			goto parse_weapon_group_end;
+		dest[written++] = rogue ? RIT_AXE : IT_AXE;
+	}
+	else
+	{
+		SV_ClientPrintf ("Unknown weapon \"%s\". Valid weapon groups: shotguns, nailguns, rockets, other\n", arg);
+		return -1;
+	}
+
+parse_weapon_group_end:
+	if (reverse)
+	{
+		for (int i = 0; i < written / 2; i++)
+		{
+			int tmp = dest[i];
+			dest[i] = dest[written - i - 1];
+			dest[written - i - 1] = tmp;
+		}
+	}
+
+	return written;
+}
+
+/*
+==================
+Host_CycleWeapon_f
+cycleweapon console command
+
+Switches the player's weapon to the next weapon of a given set.
+You must specify one or more weapons or weapon groups to cycle through.
+The following groups are supported: shotguns, nailguns, rockets, other.
+The highest value weapon in a group is chosen first.
+A group may be prefixed with a minus sign to cycle through the group in reverse order.
+Weapons may also be specified by number.
+
+Example usages:
+  cycleweapon shotguns
+  cycleweapon nailguns shotguns
+  cycleweapon shotguns -nailguns 8
+  cycleweapon 4 3 2
+
+Similar to the 2021 rerelease's "switchweapon" command, but with the following differences:
+- It uses the user-visible 1-indexed weapon slot numbers.
+- The group names "shotguns", "nailguns", "rockets", and "other" can be given as parameters.
+- These groups automatically support some mods' weapons.
+- It checks the correct ammo types for Dissolution of Eternity's guns.
+- It runs on the host instead of the client, so it can be issued multiple times by a client before
+  getting a response from the server and be handled correctly, and it can check DoE's ammo and
+  modded weapons without crazy hacks.
+==================
+*/
+static void Host_CycleWeapon_f (void)
+{
+	if (cmd_source != src_client)
+	{
+		Cmd_ForwardToServer ();
+		return;
+	}
+
+	int weapon_args[32];
+	int weapon_args_written = 0;
+
+	// parse the arguments into the weapons array
+	for (int i = 1; i < Cmd_Argc (); i++)
+	{
+		int result = Parse_Weapon_Id_Or_Group (weapon_args + weapon_args_written, countof (weapon_args) - weapon_args_written, Cmd_Argv (i));
+		if (result < 0)
+			return;
+		weapon_args_written += result;
+	}
+
+	qboolean saw_weapon_without_ammo = false;
+
+	for (int i = 0; i < weapon_args_written; i++)
+	{
+		if (weapon_args[i] && sv_player->v.weapon == weapon_args[i])
+		{
+			// The player is holding a weapon in weapon_args, so switch to the next available weapon
+			for (int j = i + 1; j < weapon_args_written; j++)
+			{
+				if (Has_Weapon (weapon_args[j]))
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						return;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+			for (int j = 0; j < i; j++)
+			{
+				if (Has_Weapon (weapon_args[j]))
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						return;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+
+			if (saw_weapon_without_ammo)
+				SV_ClientPrintf ("Not enough ammo\n");
+			return;
+		}
+	}
+
+	// The player isn't holding anything in weapon_args, so switch to the first available weapon
+	for (int j = 0; j < weapon_args_written; j++)
+	{
+		if (Has_Weapon (weapon_args[j]))
+		{
+			if (Has_Ammo_For_Weapon (weapon_args[j]))
+			{
+				Switch_To_Weapon (weapon_args[j]);
+				return;
+			}
+			saw_weapon_without_ammo = true;
+		}
+	}
+
+	if (saw_weapon_without_ammo)
+		SV_ClientPrintf ("Not enough ammo\n");
+	else
+		SV_ClientPrintf ("No weapon\n");
+}
+
 /*
 ==================
 Host_Changelevel_f
@@ -2680,6 +3163,8 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("games", Host_Mods_f);		// as an alias to "mods" -- S.A. / QuakeSpasm
 	Cmd_AddCommand ("mapname", Host_Mapname_f); // johnfitz
 	Cmd_AddCommand ("randmap", Host_Randmap_f); // ericw
+
+	Cmd_AddCommand ("cycleweapon", Host_CycleWeapon_f);
 
 	Cmd_AddCommand ("status", Host_Status_f);
 	Cmd_AddCommand ("quit", Host_Quit_f);
