@@ -890,6 +890,268 @@ static void Host_Randmap_f (void)
 	}
 }
 
+static int Get_Nails_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_nails1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_nails;
+}
+
+static int Get_Rockets_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_rockets1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_rockets;
+}
+
+static int Get_Cells_Amount ()
+{
+	if (rogue)
+	{
+		eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_cells1"));
+		if (val)
+			return val->_float;
+	}
+	return sv_player->v.ammo_cells;
+}
+
+static qboolean Has_Ammo_For_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		return sv_player->v.ammo_shells >= 1;
+	case IT_SUPER_SHOTGUN:
+		return sv_player->v.ammo_shells >= 2;
+	case IT_NAILGUN:
+		return Get_Nails_Amount () >= 1;
+	case IT_SUPER_NAILGUN:
+		return Get_Nails_Amount () >= 2;
+	case IT_GRENADE_LAUNCHER:
+	case IT_ROCKET_LAUNCHER:
+		return Get_Rockets_Amount () >= 1;
+	case IT_LIGHTNING:
+	case HIT_LASER_CANNON:
+		return Get_Cells_Amount () >= 1;
+	case HIT_MJOLNIR:
+		return Get_Cells_Amount () >= 15;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_lava_nails"));
+			return val && val->_float >= 1;
+		}
+		else // IT_AXE
+			return true;
+	case RIT_LAVA_SUPER_NAILGUN:
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_lava_nails"));
+			return val && val->_float >= 2;
+		}
+		else
+			return false;
+	case RIT_MULTI_GRENADE:
+	case RIT_MULTI_ROCKET:
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_multi_rockets"));
+			return val && val->_float >= 1;
+		}
+		else
+			return false;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+		{
+			eval_t *val = GetEdictFieldValue (sv_player, ED_FindFieldOffset ("ammo_plasma"));
+			return val && val->_float >= 1;
+		}
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+		{
+			return sv_player->v.ammo_rockets >= 1;
+		}
+		else
+			return false;
+	case RIT_AXE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void Switch_To_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		sv_player->v.impulse = 2;
+		break;
+	case IT_SUPER_SHOTGUN:
+		sv_player->v.impulse = 3;
+		break;
+	case IT_NAILGUN:
+		sv_player->v.impulse = 4;
+		break;
+	case IT_SUPER_NAILGUN:
+		sv_player->v.impulse = 5;
+		break;
+	case IT_GRENADE_LAUNCHER:
+		sv_player->v.impulse = 6;
+		break;
+	case IT_ROCKET_LAUNCHER:
+		sv_player->v.impulse = 7;
+		break;
+	case IT_LIGHTNING:
+		sv_player->v.impulse = 8;
+		break;
+	case HIT_LASER_CANNON:
+		sv_player->v.impulse = 225;
+		break;
+	case HIT_MJOLNIR:
+		sv_player->v.impulse = 226;
+		break;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+			sv_player->v.impulse = 60;
+		else // IT_AXE
+			sv_player->v.impulse = 1;
+		break;
+	case RIT_LAVA_SUPER_NAILGUN:
+		sv_player->v.impulse = 61;
+		break;
+	case RIT_MULTI_GRENADE:
+		sv_player->v.impulse = 62;
+		break;
+	case RIT_MULTI_ROCKET:
+		sv_player->v.impulse = 63;
+		break;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+			sv_player->v.impulse = 64;
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+			sv_player->v.impulse = 227;
+		break;
+	case RIT_AXE:
+		sv_player->v.impulse = 1;
+		break;
+	}
+}
+
+static int Weapon_From_Slot_Number (int slot)
+{
+	if (slot == 1)
+		return rogue ? RIT_AXE : IT_AXE;
+	if (slot >= 2 && slot <= 8)
+		return IT_SHOTGUN << (slot - 2);
+	if (slot == 9)
+		return HIT_LASER_CANNON;
+	if (slot == 0)
+		return HIT_MJOLNIR;
+	return 0;
+}
+
+/*
+==================
+Host_CycleWeapon_f
+
+Switches the player to the next weapon of a given set.
+Similar to the 2021 rerelease's "switchweapon" command, but the user-visible weapon slot numbers.
+==================
+*/
+static void Host_CycleWeapon_f (void)
+{
+	if (cmd_source != src_client)
+	{
+		Cmd_ForwardToServer ();
+		return;
+	}
+
+	const int weapon_args_len = Cmd_Argc () - 1;
+	int		 *weapon_args = calloc (weapon_args_len, sizeof (int));
+
+	// parse the arguments into the weapons array
+	for (int i = 1; i < Cmd_Argc (); i++)
+	{
+		const char *arg = Cmd_Argv (i);
+		// TODO handle any of hipnotic's weapons.
+		// TODO handle rogue's proximity launcher ("6a").
+		// TODO handle generic terms like "shotguns", "nailguns", "explosives", "other" that can
+		// include the addon weapons.
+		if (isdigit (arg[0]))
+		{
+			int arg_num = atoi (arg);
+			weapon_args[i - 1] = Weapon_From_Slot_Number (arg_num);
+		}
+	}
+
+	qboolean saw_weapon_without_ammo = false;
+
+	for (int i = 0; i < weapon_args_len; i++)
+	{
+		if (weapon_args[i] && sv_player->v.weapon == weapon_args[i])
+		{
+			// The player is holding a weapon in weapon_args, so switch to the next available weapon
+			for (int j = i + 1; j < weapon_args_len; j++)
+			{
+				if (weapon_args[j] && (int)sv_player->v.items & weapon_args[j])
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						goto cycleweapon_end;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+			for (int j = 0; j < i; j++)
+			{
+				if (weapon_args[j] && (int)sv_player->v.items & weapon_args[j])
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						goto cycleweapon_end;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+
+			if (saw_weapon_without_ammo)
+				Con_Printf ("Not enough ammo\n");
+			goto cycleweapon_end;
+		}
+	}
+
+	// The player isn't holding anything in weapon_args, so switch to the first available weapon
+	for (int j = 0; j < weapon_args_len; j++)
+	{
+		if (weapon_args[j] && (int)sv_player->v.items & weapon_args[j])
+		{
+			if (Has_Ammo_For_Weapon (weapon_args[j]))
+			{
+				Switch_To_Weapon (weapon_args[j]);
+				goto cycleweapon_end;
+			}
+			saw_weapon_without_ammo = true;
+		}
+	}
+
+	if (saw_weapon_without_ammo)
+		Con_Printf ("Not enough ammo\n");
+	else
+		Con_Printf ("No weapon\n");
+cycleweapon_end:
+	free (weapon_args);
+}
+
 /*
 ==================
 Host_Changelevel_f
@@ -2646,6 +2908,8 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("games", Host_Mods_f);		// as an alias to "mods" -- S.A. / QuakeSpasm
 	Cmd_AddCommand ("mapname", Host_Mapname_f); // johnfitz
 	Cmd_AddCommand ("randmap", Host_Randmap_f); // ericw
+
+	Cmd_AddCommand ("cycleweapon", Host_CycleWeapon_f);
 
 	Cmd_AddCommand ("status", Host_Status_f);
 	Cmd_AddCommand ("quit", Host_Quit_f);
