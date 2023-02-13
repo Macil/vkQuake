@@ -169,6 +169,10 @@ keyname_t keynames[] = {
 	{"YBUTTON", K_YBUTTON},
 	{"LTRIGGER", K_LTRIGGER},
 	{"RTRIGGER", K_RTRIGGER},
+	{"DPAD_UP", K_DPAD_UP},
+	{"DPAD_DOWN", K_DPAD_DOWN},
+	{"DPAD_LEFT", K_DPAD_LEFT},
+	{"DPAD_RIGHT", K_DPAD_RIGHT},
 
 	{NULL, 0}};
 
@@ -1052,17 +1056,18 @@ void Key_Event (int key, qboolean down)
 		return;
 	}
 
+	qboolean is_dpad_key = key == K_DPAD_UP || key == K_DPAD_DOWN || key == K_DPAD_LEFT || key == K_DPAD_RIGHT;
 	// during demo playback, most keys bring up the main menu
-	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game && key != K_TAB)
+	if (cls.demoplayback && down && (consolekeys[key] || is_dpad_key) && key_dest == key_game && key != K_TAB)
 	{
 		cmd[0] = 0;
 		char *seektime = keydown[K_SHIFT] ? "30" : "10";
 
-		if (key == K_LEFTARROW)
+		if (key == K_LEFTARROW || key == K_DPAD_LEFT)
 			q_snprintf (cmd, sizeof (cmd), "seek -%s\n", seektime);
-		else if (key == K_RIGHTARROW)
+		else if (key == K_RIGHTARROW || key == K_DPAD_RIGHT)
 			q_snprintf (cmd, sizeof (cmd), "seek +%s\n", seektime);
-		else if (key == K_DOWNARROW)
+		else if (key == K_DOWNARROW || key == K_DPAD_DOWN)
 		{
 			if (!cls.demopaused)
 			{
@@ -1074,7 +1079,7 @@ void Key_Event (int key, qboolean down)
 				}
 			}
 		}
-		else if (key == K_UPARROW)
+		else if (key == K_UPARROW || key == K_DPAD_UP)
 		{
 			if (cls.demospeed == 0.f && cls.demopaused)
 				q_snprintf (cmd, sizeof (cmd), "pause\n");

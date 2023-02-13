@@ -3891,6 +3891,7 @@ static void VID_MenuKey (int key)
 		break;
 
 	case K_UPARROW:
+	case K_DPAD_UP:
 		S_LocalSound ("misc/menu1.wav");
 		video_options_cursor--;
 		if (!vulkan_globals.ray_query && (video_options_cursor == VID_OPT_SHADOWS))
@@ -3900,6 +3901,7 @@ static void VID_MenuKey (int key)
 		break;
 
 	case K_DOWNARROW:
+	case K_DPAD_DOWN:
 		S_LocalSound ("misc/menu1.wav");
 		video_options_cursor++;
 		if (!vulkan_globals.ray_query && (video_options_cursor == VID_OPT_SHADOWS))
@@ -3909,6 +3911,7 @@ static void VID_MenuKey (int key)
 		break;
 
 	case K_LEFTARROW:
+	case K_DPAD_LEFT:
 		S_LocalSound ("misc/menu3.wav");
 		switch (video_options_cursor)
 		{
@@ -3960,6 +3963,7 @@ static void VID_MenuKey (int key)
 		break;
 
 	case K_RIGHTARROW:
+	case K_DPAD_RIGHT:
 		S_LocalSound ("misc/menu3.wav");
 		switch (video_options_cursor)
 		{
