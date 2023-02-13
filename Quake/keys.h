@@ -115,6 +115,10 @@ typedef enum keycode_t
 	K_YBUTTON,
 	K_LTRIGGER,
 	K_RTRIGGER,
+	K_DPAD_UP,
+	K_DPAD_DOWN,
+	K_DPAD_LEFT,
+	K_DPAD_RIGHT,
 	K_MISC1,
 	K_PADDLE1,
 	K_PADDLE2,
@@ -129,7 +133,7 @@ typedef enum keycode_t
 
 // clang-format on
 
-#define MAX_KEYS 256
+#define MAX_KEYS 260
 
 #define MAXCMDLINE 256
 
