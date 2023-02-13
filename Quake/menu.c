@@ -2638,6 +2638,10 @@ static const menukeybind_t default_keybinds[] = {
 	{"+showscores", "Show score"},
 	{"messagemode", "Text chat"},
 	{"toggleconsole", "Toggle console"},
+	{"cycleweapon shotguns", "Cycle Shotguns"},
+	{"cycleweapon nailguns", "Cycle Nailguns"},
+	{"cycleweapon rockets", "Cycle Rockets"},
+	{"cycleweapon other", "Cycle Other"},
 };
 
 // current bind names for the current game
