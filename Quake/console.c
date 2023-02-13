@@ -741,7 +741,7 @@ typedef struct tab_s
 tab_t *tablist;
 
 // defs from elsewhere
-extern qboolean		   keydown[256];
+extern qboolean		   keydown[MAX_KEYS];
 extern cmd_function_t *cmd_functions;
 #define MAX_ALIAS_NAME 32
 typedef struct cmdalias_s
