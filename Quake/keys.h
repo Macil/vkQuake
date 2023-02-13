@@ -81,7 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define K_COMMAND 170
 
-#define K_PAUSE 255
+#define K_PAUSE 199
 
 //
 // mouse buttons generate virtual keys
@@ -143,18 +143,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_MOUSE5 242
 
 // SDL2 game controller keys
-#define K_LTHUMB	243
-#define K_RTHUMB	244
-#define K_LSHOULDER 245
-#define K_RSHOULDER 246
-#define K_ABUTTON	247
-#define K_BBUTTON	248
-#define K_XBUTTON	249
-#define K_YBUTTON	250
-#define K_LTRIGGER	251
-#define K_RTRIGGER	252
+#define K_LTHUMB	 243
+#define K_RTHUMB	 244
+#define K_LSHOULDER	 245
+#define K_RSHOULDER	 246
+#define K_ABUTTON	 247
+#define K_BBUTTON	 248
+#define K_XBUTTON	 249
+#define K_YBUTTON	 250
+#define K_LTRIGGER	 251
+#define K_RTRIGGER	 252
+#define K_DPAD_UP	 253
+#define K_DPAD_DOWN	 254
+#define K_DPAD_LEFT	 255
+#define K_DPAD_RIGHT 256
 
-#define MAX_KEYS 256
+#define MAX_KEYS 260
 
 #define MAXCMDLINE 256
 
