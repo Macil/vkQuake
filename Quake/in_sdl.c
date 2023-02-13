@@ -369,13 +369,13 @@ static int IN_KeyForControllerButton (SDL_GamepadButton button)
 	case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
 		return K_RSHOULDER;
 	case SDL_GAMEPAD_BUTTON_DPAD_UP:
-		return K_UPARROW;
+		return K_DPAD_UP;
 	case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-		return K_DOWNARROW;
+		return K_DPAD_DOWN;
 	case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-		return K_LEFTARROW;
+		return K_DPAD_LEFT;
 	case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-		return K_RIGHTARROW;
+		return K_DPAD_RIGHT;
 	case SDL_GAMEPAD_BUTTON_MISC1:
 		return K_MISC1;
 	case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1:
