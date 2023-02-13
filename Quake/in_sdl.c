@@ -535,6 +535,11 @@ void IN_JoyMove (usercmd_t *cmd)
 	if (!joy_active_controller)
 		return;
 
+	if (cl.paused || key_dest != key_game)
+	{
+		return;
+	}
+
 	moveRaw.x = joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_LEFTX];
 	moveRaw.y = joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_LEFTY];
 	lookRaw.x = joy_axisstate.axisvalue[SDL_CONTROLLER_AXIS_RIGHTX];
@@ -590,6 +595,11 @@ void IN_MouseMove (usercmd_t *cmd)
 
 	total_dx = 0;
 	total_dy = 0;
+
+	if (cl.paused || key_dest != key_game)
+	{
+		return;
+	}
 
 	if ((in_strafe.state & 1) || (lookstrafe.value && (in_mlook.state & 1)))
 		cmd->sidemove += m_side.value * dmx;
