@@ -2232,6 +2232,10 @@ const char *bindnames[][2] = {
 	{"impulse 7", "Rocket Lnchr."},
 	{"impulse 8", "Thunderbolt"},
 	{"toggleconsole", "Toggle console"},
+	{"cycleweapon shotguns", "Cycle Shotguns"},
+	{"cycleweapon nailguns", "Cycle Nailguns"},
+	{"cycleweapon rockets", "Cycle Rockets"},
+	{"cycleweapon other", "Cycle Other"},
 };
 
 #define NUMCOMMANDS countof (bindnames)

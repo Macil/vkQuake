@@ -229,6 +229,11 @@ typedef enum
 
 // clang-format on
 //===========================================
+// alkaline mod defines
+#define ALK_WEAPON_CHAINSAW		 256
+#define ALK_WEAPON_PLASMA		 512
+#define ALK_WEAPON_LASER_CANNON	 1024
+#define ALK_WEAPON_PROXIMITY_GUN 8192
 
 #define MAX_SCOREBOARD	   16
 #define MAX_SCOREBOARDNAME 32
