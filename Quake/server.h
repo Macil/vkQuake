@@ -111,6 +111,8 @@ typedef struct
 
 	int effectsmask; // only enable colored quad/penta dlights in 2021 release
 
+	qboolean reached_intermission;
+
 	struct
 	{
 		qboolean active;

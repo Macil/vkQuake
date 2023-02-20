@@ -47,6 +47,29 @@ impl QuakeDb {
         )
     }
 
+    /// Records that a player found a specific secret at this current time.
+    /// Does nothing if the secret has already been found.
+    pub fn insert_secret_found(
+        &mut self,
+        map_name: &str,
+        game: &str,
+        map_display_name: &str,
+        map_secret_count: u32,
+        secret: u16,
+    ) -> rusqlite::Result<()> {
+        let map_context_id = self.get_or_insert_map_with_context(
+            map_name,
+            game,
+            map_display_name,
+            map_secret_count,
+        )?;
+        self.conn.execute(
+            "INSERT OR IGNORE INTO secrets_found (map_context_id, idx, first_found_timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)",
+            params![map_context_id, secret],
+        )?;
+        Ok(())
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn insert_map_completion(
         &mut self,
@@ -55,10 +78,11 @@ impl QuakeDb {
         map_display_name: &str,
         map_secret_count: u32,
         gametype: &str,
+        skill: u16,
         max_simultaneous_players: u32,
         cheats_used: bool,
         completed_time: u32,
-        secrets_found: &[u32],
+        secrets_found: &[u16],
         monsters_killed: u32,
         monsters_total: u32,
     ) -> rusqlite::Result<()> {
@@ -70,8 +94,8 @@ impl QuakeDb {
             map_secret_count,
         )?;
         self.conn.execute(
-            "INSERT INTO map_completions (map_context_id, timestamp, gametype, max_simultaneous_players, cheats_used, completed_time, secrets_found_json, monsters_killed, monsters_total) VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)",
-            params![map_context_id, gametype, max_simultaneous_players, cheats_used, completed_time, secrets_found_json, monsters_killed, monsters_total],
+            "INSERT INTO map_completions (map_context_id, timestamp, gametype, skill, max_simultaneous_players, cheats_used, completed_time, secrets_found_json, monsters_killed, monsters_total) VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![map_context_id, gametype, skill, max_simultaneous_players, cheats_used, completed_time, secrets_found_json, monsters_killed, monsters_total],
         )?;
         Ok(())
     }

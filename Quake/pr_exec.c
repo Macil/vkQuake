@@ -568,7 +568,7 @@ void PR_ExecuteProgram (func_t fnum)
 			st = &qcvm->statements[PR_LeaveFunction ()];
 			if (qcvm->depth == exitdepth)
 			{ // Done
-				return;
+				goto PR_ExecuteProgram_end;
 			}
 			break;
 
@@ -584,6 +584,91 @@ void PR_ExecuteProgram (func_t fnum)
 			PR_RunError ("Bad opcode %i", st->op);
 		}
 	} /* end of while(1) loop */
+
+PR_ExecuteProgram_end:
+	if (qcvm == &sv.qcvm)
+	{
+		if (!sv.reached_intermission)
+		{
+			// TODO check that a svc_intermission packet was sent instead of checking these conditions.
+			qboolean some_players_checked = false;
+			qboolean all_players_in_intermission = true;
+			for (int i = 0; i < svs.maxclients; i++)
+			{
+				if (!svs.clients[i].active)
+					continue;
+				some_players_checked = true;
+				edict_t *edict = svs.clients[i].edict;
+				if (edict->v.takedamage != DAMAGE_NO || edict->v.solid != SOLID_NOT || edict->v.movetype != MOVETYPE_NONE)
+				{
+					all_players_in_intermission = false;
+					break;
+				}
+			}
+
+			if (some_players_checked && all_players_in_intermission)
+			{
+				// TODO don't do this lookup on every run
+				// TODO do this lookup first instead of players check
+				ddef_t *intermission_running = ED_FindGlobal ("intermission_running");
+				if (intermission_running && qcvm->globals[intermission_running->ofs] > 0)
+				{
+					sv.reached_intermission = true;
+
+					const int total_secrets = pr_global_struct->total_secrets;
+					uint8_t	 *secrets_not_found = calloc (total_secrets, sizeof (uint8_t));
+					int		  secrets_not_found_count = 0;
+
+					edict_t *ent = NEXT_EDICT (qcvm->edicts);
+					for (int e = 1; e < qcvm->num_edicts; e++, ent = NEXT_EDICT (ent))
+					{
+						if (ent->free)
+							continue;
+						// Arcane Dimensions keeps secret triggers around but them not solid.
+						if (ent->v.solid == SOLID_NOT)
+							continue;
+						if (ent->secret_index_plus_one != 0)
+						{
+							int secret_index = ent->secret_index_plus_one - 1;
+							if (secret_index < total_secrets)
+							{
+								secrets_not_found[secret_index] = 1;
+								secrets_not_found_count++;
+							}
+						}
+					}
+
+					const int expected_secrets_not_found = pr_global_struct->total_secrets - pr_global_struct->found_secrets;
+					if (secrets_not_found_count != expected_secrets_not_found)
+					{
+						Con_DPrintf ("Warning: only identified %d out of %d secrets not found.\n", secrets_not_found_count, expected_secrets_not_found);
+					}
+
+					const int found_secrets = pr_global_struct->found_secrets;
+					int		  identified_secrets = 0;
+					uint16_t *secrets = malloc (found_secrets * sizeof (uint16_t));
+
+					for (int i = 0; i < total_secrets && identified_secrets < found_secrets; i++)
+					{
+						if (secrets_not_found[i] == 0)
+						{
+							secrets[identified_secrets++] = i;
+						}
+					}
+
+					MSG_WriteByte (&sv.multicast, svcmx_level_complete);
+					MSG_WriteShort (&sv.multicast, current_skill);
+					MSG_WriteShort (&sv.multicast, identified_secrets);
+					SZ_Write (&sv.multicast, secrets, identified_secrets * sizeof (uint16_t));
+					// TODO send only to clients with correct protocol flags
+					SV_Multicast (MULTICAST_ALL_R, NULL, 0, 0);
+
+					free (secrets_not_found);
+					free (secrets);
+				}
+			}
+		}
+	}
 }
 #undef OPA
 #undef OPB
