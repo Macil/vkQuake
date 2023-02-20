@@ -3274,6 +3274,7 @@ void SV_SpawnServer (const char *server)
 
 	// Initialize entity 0 = World
 	ent = EDICT_NUM (0);
+	ent->secret_index_plus_one = 0;
 	memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 	ent->free = false;
 	ent->v.model = PR_SetEngineString (qcvm->worldmodel->name);
