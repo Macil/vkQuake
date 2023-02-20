@@ -114,7 +114,7 @@ meson build && ninja -C build
 To compile vkQuake, first install the build dependencies with Homebrew:
 
 ~~~
-brew install molten-vk vulkan-headers glslang spirv-tools sdl2 libvorbis flac opus opusfile flac mad meson pkgconfig
+brew install molten-vk vulkan-headers glslang spirv-tools sdl2 libvorbis flac opus opusfile flac mad meson pkg-config
 ~~~
 
 Install Rust using rustup: https://www.rust-lang.org/tools/install
