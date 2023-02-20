@@ -54,21 +54,6 @@ static int pr_ext_warned_particleeffectnum;						  // so these only spam once pe
 static void *PR_FindExtGlobal (int type, const char *name);
 void		 SV_CheckVelocity (edict_t *ent);
 
-typedef enum multicast_e
-{
-	MULTICAST_ALL_U,
-	MULTICAST_PHS_U,
-	MULTICAST_PVS_U,
-	MULTICAST_ALL_R,
-	MULTICAST_PHS_R,
-	MULTICAST_PVS_R,
-
-	MULTICAST_ONE_U,
-	MULTICAST_ONE_R,
-	MULTICAST_INIT
-} multicast_t;
-static void SV_Multicast (multicast_t to, float *org, int msg_entity, unsigned int requireext2);
-
 #define RETURN_EDICT(e) (((int *)qcvm->globals)[OFS_RETURN] = EDICT_TO_PROG (e))
 
 int PR_MakeTempString (const char *val)
@@ -2419,6 +2404,7 @@ static void PF_spawnclient (void)
 				SV_ConnectClient (i);
 				svs.clients[i].spawned = true;
 				ent = svs.clients[i].edict;
+				ent->secret_index_plus_one = 0;
 				memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 				ent->v.colormap = NUM_FOR_EDICT (ent);
 				ent->v.team = (svs.clients[i].colors & 15) + 1;
@@ -3870,7 +3856,7 @@ static void PF_multicast_internal (qboolean reliable, byte *pvs, unsigned int re
 	}
 }
 // FIXME: shouldn't really be using pext2, but we don't track the earlier extensions, and it should be safe enough.
-static void SV_Multicast (multicast_t to, float *org, int msg_entity, unsigned int requireext2)
+void SV_Multicast (multicast_t to, float *org, int msg_entity, unsigned int requireext2)
 {
 	unsigned int i;
 

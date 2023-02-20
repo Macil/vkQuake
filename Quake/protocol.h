@@ -331,6 +331,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svcfte_updateentities	86
 // spike -- end
 
+// mxquake new server messages
+#define svcmx_player_found_secret 90 // [short] secret index, sent only to the player who found the secret
+#define svcmx_level_complete	  91 // [short] skill, [short] count of secret indexes, [short] for each secret index
+// mxquake end
+
 //
 // client to server
 //

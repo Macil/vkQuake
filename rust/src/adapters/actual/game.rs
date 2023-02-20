@@ -1,6 +1,6 @@
 use super::raw_bindings::{
-    cl, cls, cmd_source_t_src_command, svs, COM_GetGameNames, Cmd_ExecuteString, Con_Redirect,
-    STAT_MONSTERS, STAT_TOTALMONSTERS, STAT_TOTALSECRETS,
+    cl, cls, cmd_source_t_src_command, stat_t_STAT_MONSTERS, stat_t_STAT_TOTALMONSTERS,
+    stat_t_STAT_TOTALSECRETS, svs, COM_GetGameNames, Cmd_ExecuteString, Con_Redirect,
 };
 use crate::adapters::common::Gametype;
 use crate::tracing_init;
@@ -189,20 +189,16 @@ impl ClGame {
         unsafe { std::ffi::CStr::from_ptr(&cl.levelname[0]) }.to_str()
     }
     pub fn map_secret_count(&self) -> Result<u32, TryFromIntError> {
-        u32::try_from(unsafe { cl.stats[STAT_TOTALSECRETS as usize] })
+        u32::try_from(unsafe { cl.stats[stat_t_STAT_TOTALSECRETS as usize] })
     }
     pub fn completed_time(&self) -> Result<u32, TryFromIntError> {
         u32::try_from(unsafe { cl.completed_time })
     }
-    pub fn secrets_found(&self) -> Vec<u32> {
-        // TODO
-        Vec::new()
-    }
     pub fn monsters_killed(&self) -> Result<u32, TryFromIntError> {
-        u32::try_from(unsafe { cl.stats[STAT_MONSTERS as usize] })
+        u32::try_from(unsafe { cl.stats[stat_t_STAT_MONSTERS as usize] })
     }
     pub fn monsters_total(&self) -> Result<u32, TryFromIntError> {
-        u32::try_from(unsafe { cl.stats[STAT_TOTALMONSTERS as usize] })
+        u32::try_from(unsafe { cl.stats[stat_t_STAT_TOTALMONSTERS as usize] })
     }
     pub fn player_count(&self) -> u32 {
         let scores =
@@ -254,11 +250,29 @@ pub unsafe extern "C" fn Rust_Init() {
 // Disabled in tests because the rest of the crate expects mock Game references instead of real ones.
 #[cfg(not(test))]
 #[no_mangle]
-pub unsafe extern "C" fn CL_Rust_Level_Completed() {
+pub unsafe extern "C" fn CL_Rust_Player_Found_Secret(secret: u16) {
     let mut cl_game = ClGame {
         game: Game { _field: () },
         _field: (),
     };
 
-    crate::player_stats::level_completed(&mut cl_game);
+    crate::player_stats::player_found_secret(&mut cl_game, secret);
+}
+
+// Disabled in tests because the rest of the crate expects mock Game references instead of real ones.
+#[cfg(not(test))]
+#[no_mangle]
+pub unsafe extern "C" fn CL_Rust_Level_Completed(
+    skill: u16,
+    secrets: *const u16,
+    secrets_len: usize,
+) {
+    let mut cl_game = ClGame {
+        game: Game { _field: () },
+        _field: (),
+    };
+
+    let secrets = unsafe { std::slice::from_raw_parts(secrets, secrets_len) };
+
+    crate::player_stats::level_completed(&mut cl_game, skill, secrets);
 }

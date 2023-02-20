@@ -12,4 +12,15 @@ void Rust_Init_Early(void);
 
 void Rust_Init(void);
 
-void CL_Rust_Level_Completed(void);
+void CL_Rust_Player_Found_Secret(uint16_t secret);
+
+void CL_Rust_Level_Completed(uint16_t skill, const uint16_t *secrets, uintptr_t secrets_len);
+
+void Secret_ClearLocations(void);
+
+void Secret_RecordLocation(uint16_t secret, const vec3_t *mins);
+
+/**
+ * Returns -1 if the secret is not found.
+ */
+int32_t Secret_GetIndexForLocation(const vec3_t *mins);

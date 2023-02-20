@@ -56,6 +56,11 @@ typedef struct edict_s
 	vec3_t		   predthinkpos; /* expected edict origin once its nextthink arrives (sv_smoothplatformlerps) */
 	float		   lastthink;	 /* time when predthinkpos was updated, or 0 if not valid (sv_smoothplatformlerps) */
 
+	// used to track identity of secrets for player stat tracking. Can be loaded from
+	// maps and saves from the property "secret_index" on the entity if present, otherwise
+	// the value is calculated during map load.
+	unsigned int secret_index_plus_one;
+
 	float			freetime; /* sv.time when the object was freed */
 	qboolean		free;
 	struct edict_s *prev_free;
@@ -93,6 +98,21 @@ int	   PF_SV_ForceParticlePrecache (const char *s);
 int	   SV_Precache_Model (const char *s);
 int	   SV_Precache_Sound (const char *s);
 void   PR_spawnfunc_misc_model (edict_t *self);
+
+typedef enum multicast_e
+{
+	MULTICAST_ALL_U,
+	MULTICAST_PHS_U,
+	MULTICAST_PVS_U,
+	MULTICAST_ALL_R,
+	MULTICAST_PHS_R,
+	MULTICAST_PVS_R,
+
+	MULTICAST_ONE_U,
+	MULTICAST_ONE_R,
+	MULTICAST_INIT
+} multicast_t;
+void SV_Multicast (multicast_t to, float *org, int msg_entity, unsigned int requireext2);
 
 // from pr_edict, for pr_ext. reflection is messy.
 qboolean	 ED_ParseEpair (void *base, ddef_t *key, const char *s, qboolean zoned);

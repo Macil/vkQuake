@@ -2073,6 +2073,7 @@ static void Host_Loadgame_f (void)
 				ent->free = false;
 				ent->next_free = NULL;
 				ent->prev_free = NULL;
+				ent->secret_index_plus_one = 0;
 				memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 			}
 			else
@@ -2509,6 +2510,7 @@ static void Host_Spawn_f (void)
 		// set up the edict
 		ent = host_client->edict;
 
+		ent->secret_index_plus_one = 0;
 		memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 		ent->v.colormap = NUM_FOR_EDICT (ent);
 		ent->v.team = (host_client->colors & 15) + 1;
