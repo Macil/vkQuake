@@ -4,6 +4,7 @@ pub mod console;
 pub mod cvar;
 pub mod game;
 mod raw_bindings;
+mod secret_locations;
 
 pub fn game_pref_path() -> PathBuf {
     let empty = std::ffi::CString::new("").unwrap();
