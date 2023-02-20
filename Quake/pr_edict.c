@@ -511,6 +511,9 @@ void ED_Write (FILE *f, edict_t *ed)
 		fprintf (f, "\"alpha\" \"%f\"\n", ENTALPHA_TOSAVE (ed->alpha));
 	// johnfitz
 
+	if (ed->secret_index_plus_one != 0)
+		fprintf (f, "\"secret_index\" \"%d\"\n", ed->secret_index_plus_one - 1);
+
 	fprintf (f, "}\n");
 }
 
@@ -939,6 +942,12 @@ const char *ED_ParseEdict (const char *data, edict_t *ent)
 			ent->alpha = ENTALPHA_ENCODE (atof (com_token));
 		// johnfitz
 
+		if (!strcmp (keyname, "secret_index"))
+		{
+			ent->secret_index_plus_one = atoi (com_token) + 1;
+			continue;
+		}
+
 		key = ED_FindField (keyname);
 		if (!key)
 		{
@@ -1000,6 +1009,7 @@ void ED_LoadFromFile (const char *data)
 	edict_t		*ent = NULL;
 	int			 inhibit = 0;
 	int			 usingspawnfunc = 0;
+	unsigned int next_secret_index = 0;
 
 	pr_global_struct->time = qcvm->time;
 
@@ -1068,8 +1078,15 @@ void ED_LoadFromFile (const char *data)
 			continue;
 		}
 
+		float old_total_secrets = pr_global_struct->total_secrets;
+
 		pr_global_struct->self = EDICT_TO_PROG (ent);
 		PR_ExecuteProgram (func - qcvm->functions);
+
+		if (pr_global_struct->total_secrets > old_total_secrets && ent->secret_index_plus_one == 0)
+		{
+			ent->secret_index_plus_one = (next_secret_index++) + 1;
+		}
 	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);

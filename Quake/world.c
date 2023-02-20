@@ -332,6 +332,8 @@ void SV_TouchLinks (edict_t *ent)
 		old_self = pr_global_struct->self;
 		old_other = pr_global_struct->other;
 
+		float old_found_secrets = pr_global_struct->found_secrets;
+
 		pr_global_struct->self = EDICT_TO_PROG (touch);
 		pr_global_struct->other = EDICT_TO_PROG (ent);
 		pr_global_struct->time = qcvm->time;
@@ -339,6 +341,11 @@ void SV_TouchLinks (edict_t *ent)
 
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;
+
+		if (pr_global_struct->found_secrets > old_found_secrets && touch->secret_index_plus_one != 0)
+		{
+			// Con_SafePrintf ("Player found secret %d\n", touch->secret_index_plus_one - 1);
+		}
 	}
 
 	TEMP_FREE (list);

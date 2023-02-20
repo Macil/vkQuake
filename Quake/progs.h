@@ -49,6 +49,11 @@ typedef struct edict_s
 	unsigned char  alpha;		 /* johnfitz -- hack to support alpha since it's not part of entvars_t */
 	qboolean	   sendinterval; /* johnfitz -- send time until nextthink to client for better lerp timing */
 
+	// used to track identity of secrets for player stat tracking. Can be loaded from
+	// maps and saves from the property "secret_index" on the entity if present, otherwise
+	// the value is calculated during map load.
+	unsigned int secret_index_plus_one;
+
 	vec3_t predthinkpos; /* expected edict origin once its nextthink arrives (sv_smoothplatformlerps) */
 	float  lastthink;	 /* time when predthinkpos was updated, or 0 if not valid (sv_smoothplatformlerps) */
 
