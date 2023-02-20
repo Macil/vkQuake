@@ -11,3 +11,5 @@ void Rust_Frame(void);
 void Rust_Init_Early(void);
 
 void Rust_Init(void);
+
+void CL_Rust_Level_Completed(void);

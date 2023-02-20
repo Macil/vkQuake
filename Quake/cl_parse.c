@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "bgmusic.h"
+#include "cbindgen/librust.h"
 
 const char *svc_strings[128] = {
 	"svc_bad", "svc_nop", "svc_disconnect", "svc_updatestat",
@@ -1993,6 +1994,7 @@ void CL_ParseServerMessage (void)
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true; // go to full screen
 			V_RestoreAngles ();
+			CL_Rust_Level_Completed ();
 			break;
 
 		case svc_finale:
