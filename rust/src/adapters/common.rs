@@ -39,3 +39,20 @@ bitflags! {
         const CVAR_AUTOCVAR = 1 << 18;
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Gametype {
+    Singleplayer,
+    Coop,
+    Deathmatch,
+}
+
+impl std::fmt::Display for Gametype {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Gametype::Singleplayer => write!(f, "singleplayer"),
+            Gametype::Coop => write!(f, "coop"),
+            Gametype::Deathmatch => write!(f, "deathmatch"),
+        }
+    }
+}
