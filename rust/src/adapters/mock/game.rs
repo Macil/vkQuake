@@ -75,9 +75,6 @@ impl ClGame {
     pub fn completed_time(&self) -> Result<u32, TryFromIntError> {
         unimplemented!();
     }
-    pub fn secrets_found(&self) -> Vec<u32> {
-        unimplemented!();
-    }
     pub fn monsters_killed(&self) -> Result<u32, TryFromIntError> {
         unimplemented!();
     }
@@ -111,5 +108,6 @@ fn dummy_rust_calls() {
         game: Game { _field: () },
         _field: (),
     };
-    crate::player_stats::level_completed(&mut cl_game);
+    crate::player_stats::player_found_secret(&mut cl_game, 1337);
+    crate::player_stats::level_completed(&mut cl_game, 1, &[]);
 }

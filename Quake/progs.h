@@ -48,6 +48,11 @@ typedef struct edict_s
 	unsigned char  alpha;		 /* johnfitz -- hack to support alpha since it's not part of entvars_t */
 	qboolean	   sendinterval; /* johnfitz -- send time until nextthink to client for better lerp timing */
 
+	// used to track identity of secrets for player stat tracking. Can be loaded from
+	// maps and saves from the property "secret_index" on the entity if present, otherwise
+	// the value is calculated during map load.
+	unsigned int secret_index_plus_one;
+
 	vec3_t predthinkpos; /* expected edict origin once its nextthink arrives (sv_smoothplatformlerps) */
 	float  lastthink;	 /* time when predthinkpos was updated, or 0 if not valid (sv_smoothplatformlerps) */
 
@@ -85,6 +90,21 @@ void   PR_DumpPlatform_f (void); // console command: writes out a qsextensions.q
 // special hacks...
 int	   PF_SV_ForceParticlePrecache (const char *s);
 int	   SV_Precache_Model (const char *s);
+
+typedef enum multicast_e
+{
+	MULTICAST_ALL_U,
+	MULTICAST_PHS_U,
+	MULTICAST_PVS_U,
+	MULTICAST_ALL_R,
+	MULTICAST_PHS_R,
+	MULTICAST_PVS_R,
+
+	MULTICAST_ONE_U,
+	MULTICAST_ONE_R,
+	MULTICAST_INIT
+} multicast_t;
+void SV_Multicast (multicast_t to, float *org, int msg_entity, unsigned int requireext2);
 
 // from pr_edict, for pr_ext. reflection is messy.
 qboolean	 ED_ParseEpair (void *base, ddef_t *key, const char *s, qboolean zoned);

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS map_completions (
     map_context_id INTEGER NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     gametype TEXT NOT NULL,
+    skill INTEGER NOT NULL,
     max_simultaneous_players INTEGER NOT NULL,
     cheats_used BOOLEAN NOT NULL CHECK (cheats_used IN (0, 1)),
     completed_time INTEGER NOT NULL,

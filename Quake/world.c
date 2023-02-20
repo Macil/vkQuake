@@ -332,6 +332,8 @@ void SV_TouchLinks (edict_t *ent)
 		old_self = pr_global_struct->self;
 		old_other = pr_global_struct->other;
 
+		float old_found_secrets = pr_global_struct->found_secrets;
+
 		pr_global_struct->self = EDICT_TO_PROG (touch);
 		pr_global_struct->other = EDICT_TO_PROG (ent);
 		pr_global_struct->time = qcvm->time;
@@ -339,6 +341,24 @@ void SV_TouchLinks (edict_t *ent)
 
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;
+
+		if (pr_global_struct->found_secrets > old_found_secrets && touch->secret_index_plus_one != 0)
+		{
+			// send packet to client who found the secret
+			int secret_found = touch->secret_index_plus_one - 1;
+			for (int j = 0; j < svs.maxclients; j++)
+			{
+				client_t *client = &svs.clients[j];
+				if (!client->active || !client->spawned)
+					continue;
+				if (client->edict != ent)
+					continue;
+				// TODO check protocol flags
+				MSG_WriteByte (&client->message, svcmx_player_found_secret);
+				MSG_WriteShort (&client->message, secret_found);
+				break;
+			}
+		}
 	}
 
 	TEMP_FREE (list);

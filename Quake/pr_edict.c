@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_edict.c -- entity dictionary
 
 #include "quakedef.h"
+#include "cbindgen/librust.h"
 
 int type_size[8] = {
 	1, // ev_void
@@ -65,6 +66,7 @@ edict_t *ED_Alloc (void)
 	if (e && ((e->freetime < 2) || (qcvm->time - e->freetime) > 0.5))
 	{
 		assert (e->free);
+		e->secret_index_plus_one = 0;
 		memset (&e->v, 0, qcvm->progs->entityfields * 4);
 		e->free = false;
 		if (e == qcvm->free_edicts_tail)
@@ -525,6 +527,9 @@ void ED_Write (FILE *f, edict_t *ed)
 		fprintf (f, "\"alpha\" \"%f\"\n", ENTALPHA_TOSAVE (ed->alpha));
 	// johnfitz
 
+	if (ed->secret_index_plus_one != 0)
+		fprintf (f, "\"secret_index\" \"%d\"\n", ed->secret_index_plus_one - 1);
+
 	fprintf (f, "}\n");
 }
 
@@ -877,6 +882,8 @@ qboolean ED_ParseEpair (void *base, ddef_t *key, const char *s, qboolean zoned)
 	return true;
 }
 
+static const char *ED_ParseEdict1 (const char *data, edict_t *ent, qboolean lookup_secret_indexes);
+
 /*
 ====================
 ED_ParseEdict
@@ -888,6 +895,11 @@ Used for initial level load and for savegames.
 */
 const char *ED_ParseEdict (const char *data, edict_t *ent)
 {
+	return ED_ParseEdict1 (data, ent, true);
+}
+
+static const char *ED_ParseEdict1 (const char *data, edict_t *ent, qboolean lookup_secret_indexes)
+{
 	ddef_t	*key;
 	char	 keyname[256];
 	qboolean anglehack, init;
@@ -897,7 +909,10 @@ const char *ED_ParseEdict (const char *data, edict_t *ent)
 
 	// clear it
 	if (ent != qcvm->edicts) // hack
+	{
+		ent->secret_index_plus_one = 0;
 		memset (&ent->v, 0, qcvm->progs->entityfields * 4);
+	}
 
 	// go through all the dictionary pairs
 	while (1)
@@ -953,6 +968,12 @@ const char *ED_ParseEdict (const char *data, edict_t *ent)
 			ent->alpha = ENTALPHA_ENCODE (atof (com_token));
 		// johnfitz
 
+		if (!strcmp (keyname, "secret_index"))
+		{
+			ent->secret_index_plus_one = atoi (com_token) + 1;
+			continue;
+		}
+
 		key = ED_FindField (keyname);
 		if (!key)
 		{
@@ -991,6 +1012,15 @@ const char *ED_ParseEdict (const char *data, edict_t *ent)
 	if (!init)
 		ED_Free (ent);
 
+	// Handle setting secret_index for trigger_secret entities in gamesaves
+	// produced by older versions without secret_index support.
+	if (lookup_secret_indexes && !ent->secret_index_plus_one && ent->v.solid != SOLID_NOT && !strcmp (PR_GetString (ent->v.classname), "trigger_secret"))
+	{
+		int secret_index = Secret_GetIndexForLocation (&ent->v.mins);
+		if (secret_index >= 0)
+			ent->secret_index_plus_one = secret_index + 1;
+	}
+
 	return data;
 }
 
@@ -1015,8 +1045,11 @@ void ED_LoadFromFile (const char *data)
 	edict_t		*ent = NULL;
 	int			 inhibit = 0;
 	int			 usingspawnfunc = 0;
+	unsigned int next_secret_index = 0;
 
 	pr_global_struct->time = qcvm->time;
+
+	Secret_ClearLocations ();
 
 	// parse ents
 	while (1)
@@ -1032,7 +1065,7 @@ void ED_LoadFromFile (const char *data)
 			ent = EDICT_NUM (0);
 		else
 			ent = ED_Alloc ();
-		data = ED_ParseEdict (data, ent);
+		data = ED_ParseEdict1 (data, ent, false);
 
 		// remove things from different skill levels or deathmatch
 		if (deathmatch.value)
@@ -1083,8 +1116,18 @@ void ED_LoadFromFile (const char *data)
 			continue;
 		}
 
+		float old_total_secrets = pr_global_struct->total_secrets;
+
 		pr_global_struct->self = EDICT_TO_PROG (ent);
 		PR_ExecuteProgram (func - qcvm->functions);
+
+		// Mark the secret index on this entity so we can identify it later after some
+		// secret triggers are removed.
+		if (pr_global_struct->total_secrets > old_total_secrets && ent->secret_index_plus_one == 0)
+		{
+			Secret_RecordLocation (next_secret_index, &ent->v.mins);
+			ent->secret_index_plus_one = (next_secret_index++) + 1;
+		}
 	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);

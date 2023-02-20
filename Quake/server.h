@@ -104,6 +104,8 @@ typedef struct
 	size_t numcustomstats;
 
 	int effectsmask; // only enable colored quad/penta dlights in 2021 release
+
+	qboolean reached_intermission;
 } server_t;
 
 #define NUM_PING_TIMES		  16

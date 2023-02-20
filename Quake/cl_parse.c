@@ -1994,7 +1994,6 @@ void CL_ParseServerMessage (void)
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true; // go to full screen
 			V_RestoreAngles ();
-			CL_Rust_Level_Completed ();
 			break;
 
 		case svc_finale:
@@ -2151,6 +2150,29 @@ void CL_ParseServerMessage (void)
 			while (bytes-- > 0)
 				MSG_ReadByte ();
 			break;
+
+		case svcmx_player_found_secret:
+		{
+			// TODO error if protocol flag for this isn't on.
+			int secret_index = MSG_ReadShort ();
+			CL_Rust_Player_Found_Secret (secret_index);
+			break;
+		}
+
+		case svcmx_level_complete:
+		{
+			// TODO error if protocol flag for this isn't on.
+			int		  skill_level = MSG_ReadShort ();
+			int		  secret_count = MSG_ReadShort ();
+			uint16_t *secrets = malloc (sizeof (uint16_t) * secret_count);
+			for (i = 0; i < secret_count; i++)
+			{
+				secrets[i] = MSG_ReadShort ();
+			}
+			CL_Rust_Level_Completed (skill_level, secrets, secret_count);
+			free (secrets);
+			break;
+		}
 		}
 
 		lastcmd = cmd; // johnfitz
