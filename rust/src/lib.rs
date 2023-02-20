@@ -2,7 +2,9 @@
 
 mod adapters;
 mod axum_helpers;
+mod db;
 mod middleware;
+mod player_stats;
 mod tracing_init;
 
 use adapters::{
@@ -15,8 +17,9 @@ use axum::{
     Json, Router,
 };
 use axum_helpers::QuakeAPIResponseError;
+use db::QuakeDb;
 use hyperlocal_with_windows::{remove_unix_socket_if_present, UnixServerExt};
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tokio::runtime::Runtime;
@@ -25,6 +28,12 @@ use tower_http::{trace::TraceLayer, validate_request::ValidateRequestHeaderLayer
 
 /// Should only need to be used directly by synchronous code called from C.
 pub(crate) static RUNTIME: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
+
+// TODO maybe use message passing to communicate to a dedicated db task instead of using a Mutex.
+pub(crate) static DB: OnceCell<std::sync::Mutex<QuakeDb>> = OnceCell::new();
+
+pub(crate) static REMOTE_API_HTTP_ENABLED: OnceCell<Cvar> = OnceCell::new();
+pub(crate) static RECORD_PLAYER_STATS: OnceCell<Cvar> = OnceCell::new();
 
 pub(crate) fn init(game_init: &mut GameInit) {
     // TODO
@@ -57,17 +66,35 @@ pub(crate) fn init(game_init: &mut GameInit) {
     // I'm just not sure if it distinguishes commands from maps vs the player and what it allows specifically.
     // Also look at how Host_Savegame_f checks cmd_source.
 
-    let remote_api_http_enabled = Cvar::register(
-        game_init,
-        "remote_api_http_enabled",
-        "1",
-        CvarFlags::CVAR_ARCHIVE,
-    );
+    REMOTE_API_HTTP_ENABLED
+        .set(Cvar::register(
+            game_init,
+            "remote_api_http_enabled",
+            "1",
+            CvarFlags::CVAR_ARCHIVE,
+        ))
+        .unwrap();
 
-    Cvar::load_early(game_init, &[remote_api_http_enabled.name()]).unwrap();
+    RECORD_PLAYER_STATS
+        .set(Cvar::register(
+            game_init,
+            "record_player_stats",
+            "1",
+            CvarFlags::CVAR_ARCHIVE,
+        ))
+        .unwrap();
+
+    DB.set(std::sync::Mutex::new(QuakeDb::new().unwrap()))
+        .unwrap();
+
+    Cvar::load_early(game_init, &[REMOTE_API_HTTP_ENABLED.get().unwrap().name()]).unwrap();
 
     // TODO react to cvar changes
-    let remote_api_http_enabled_value = remote_api_http_enabled.value(&game_init.game);
+    let remote_api_http_enabled_value = REMOTE_API_HTTP_ENABLED
+        .get()
+        .unwrap()
+        .value(&game_init.game);
+
     RUNTIME.spawn(async move {
         tokio::spawn(async move {
             if let Err(e) = listen_on_unix_socket().await {
@@ -154,7 +181,8 @@ struct PostRconResponse {
 
 async fn player() -> Result<Json<Option<PlayerEntity>>, QuakeAPIResponseError> {
     let player_health =
-        adapters::game::Game::run_in_game_thread_with_result(|game| game.player_health()).await?;
+        adapters::game::SvGame::run_in_game_thread_with_result(|sv_game| sv_game.player_health())
+            .await?;
     let value = player_health.map(|health| PlayerEntity { health });
     Ok(Json(value))
 }
@@ -162,10 +190,10 @@ async fn player() -> Result<Json<Option<PlayerEntity>>, QuakeAPIResponseError> {
 async fn patch_player(
     extract::Json(patch): extract::Json<PatchPlayerEntity>,
 ) -> Result<Json<()>, QuakeAPIResponseError> {
-    adapters::game::Game::run_in_game_thread_mut(move |game| {
+    adapters::game::SvGame::run_in_game_thread_mut(move |sv_game| {
         tracing::info!("updating player: {:?}", patch);
         if let Some(health) = patch.health {
-            game.set_player_health(health);
+            sv_game.set_player_health(health);
         }
     })
     .await;
@@ -179,8 +207,8 @@ async fn entities() -> &'static str {
 async fn rcon(
     extract::Json(body): extract::Json<PostRconRequestBody>,
 ) -> Result<Json<PostRconResponse>, QuakeAPIResponseError> {
-    let output = adapters::game::Game::run_in_game_thread_mut_with_result(move |game| {
-        game.rcon(&body.command)
+    let output = adapters::game::SvGame::run_in_game_thread_mut_with_result(move |sv_game| {
+        sv_game.rcon(&body.command)
     })
     .await?;
     Ok(Json(PostRconResponse { output }))
