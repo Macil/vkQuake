@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // rights reserved.
 
 #include "quakedef.h"
+#include <ctype.h>
 
 extern cvar_t cl_maxpitch; // johnfitz -- variable pitch clamping
 extern cvar_t cl_minpitch; // johnfitz -- variable pitch clamping
@@ -262,6 +263,222 @@ void IN_JumpUp (void)
 void IN_Impulse (void)
 {
 	in_impulse = atoi (Cmd_Argv (1));
+}
+
+static qboolean Has_Ammo_For_Weapon (int weapon)
+{
+	// TODO handle rogue alt guns and ammo types properly. Will need to track
+	// hud ammo state and last-seen ammo counts per state.
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		return cl.stats[STAT_SHELLS] >= 1;
+	case IT_SUPER_SHOTGUN:
+		return cl.stats[STAT_SHELLS] >= 2;
+	case IT_NAILGUN:
+		return cl.stats[STAT_NAILS] >= 1;
+	case IT_SUPER_NAILGUN:
+		return cl.stats[STAT_NAILS] >= 2;
+	case IT_GRENADE_LAUNCHER:
+	case IT_ROCKET_LAUNCHER:
+		return cl.stats[STAT_ROCKETS] >= 1;
+	case IT_LIGHTNING:
+	case HIT_LASER_CANNON:
+		return cl.stats[STAT_CELLS] >= 1;
+	case HIT_MJOLNIR:
+		return cl.stats[STAT_CELLS] >= 15;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+			// TODO should be lava nails
+			return cl.stats[STAT_NAILS] >= 1;
+		else // IT_AXE
+			return true;
+	case RIT_LAVA_SUPER_NAILGUN:
+		if (rogue)
+			// TODO should be lava nails
+			return cl.stats[STAT_NAILS] >= 2;
+		else
+			return false;
+	case RIT_MULTI_GRENADE:
+	case RIT_MULTI_ROCKET:
+		if (rogue)
+			// TODO should be multi-rockets
+			return cl.stats[STAT_ROCKETS] >= 1;
+		else
+			return false;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+			// TODO should be plasma
+			return cl.stats[STAT_CELLS] >= 1;
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+			return cl.stats[STAT_ROCKETS] >= 1;
+		else
+			return false;
+	case RIT_AXE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void Switch_To_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_SHOTGUN:
+		in_impulse = 2;
+		break;
+	case IT_SUPER_SHOTGUN:
+		in_impulse = 3;
+		break;
+	case IT_NAILGUN:
+		in_impulse = 4;
+		break;
+	case IT_SUPER_NAILGUN:
+		in_impulse = 5;
+		break;
+	case IT_GRENADE_LAUNCHER:
+		in_impulse = 6;
+		break;
+	case IT_ROCKET_LAUNCHER:
+		in_impulse = 7;
+		break;
+	case IT_LIGHTNING:
+		in_impulse = 8;
+		break;
+	case HIT_LASER_CANNON:
+		in_impulse = 225;
+		break;
+	case HIT_MJOLNIR:
+		in_impulse = 226;
+		break;
+	case RIT_LAVA_NAILGUN: // same as IT_AXE
+		if (rogue)
+			in_impulse = 60;
+		else // IT_AXE
+			in_impulse = 1;
+		break;
+	case RIT_LAVA_SUPER_NAILGUN:
+		in_impulse = 61;
+		break;
+	case RIT_MULTI_GRENADE:
+		in_impulse = 62;
+		break;
+	case RIT_MULTI_ROCKET:
+		in_impulse = 63;
+		break;
+	case RIT_PLASMA_GUN: // same as HIT_PROXIMITY_GUN
+		if (rogue)
+			in_impulse = 64;
+		else if (hipnotic) // HIT_PROXIMITY_GUN
+			in_impulse = 227;
+		break;
+	case RIT_AXE:
+		in_impulse = 1;
+		break;
+	}
+}
+
+static int Weapon_From_Slot_Number (int slot)
+{
+	if (slot == 1)
+		return rogue ? RIT_AXE : IT_AXE;
+	if (slot >= 2 && slot <= 8)
+		return IT_SHOTGUN << (slot - 2);
+	if (slot == 9)
+		return HIT_LASER_CANNON;
+	if (slot == 0)
+		return HIT_MJOLNIR;
+	return 0;
+}
+
+/*
+==================
+IN_CycleWeapon
+
+Switches the player to the next weapon of a given set.
+Similar to the 2021 rerelease's "switchweapon" command, but uses the
+user-visible weapon slot numbers instead of the alternative 0-indexed values.
+==================
+*/
+void IN_CycleWeapon (void)
+{
+	const int weapon_args_len = Cmd_Argc () - 1;
+	int		 *weapon_args = calloc (weapon_args_len, sizeof (int));
+
+	// parse the arguments into the weapons array
+	for (int i = 1; i < Cmd_Argc (); i++)
+	{
+		const char *arg = Cmd_Argv (i);
+		// TODO handle any of hipnotic's weapons.
+		// TODO handle rogue's proximity launcher ("6a").
+		// TODO handle generic terms like "shotguns", "nailguns", "explosives", "other" that can
+		// include the addon weapons.
+		if (isdigit (arg[0]))
+		{
+			int arg_num = atoi (arg);
+			weapon_args[i - 1] = Weapon_From_Slot_Number (arg_num);
+		}
+	}
+
+	qboolean saw_weapon_without_ammo = false;
+
+	for (int i = 0; i < weapon_args_len; i++)
+	{
+		if (weapon_args[i] && cl.stats[STAT_ACTIVEWEAPON] == weapon_args[i])
+		{
+			// The player is holding a weapon in weapon_args, so switch to the next available weapon
+			for (int j = i + 1; j < weapon_args_len; j++)
+			{
+				if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						goto cycleweapon_end;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+			for (int j = 0; j < i; j++)
+			{
+				if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+				{
+					if (Has_Ammo_For_Weapon (weapon_args[j]))
+					{
+						Switch_To_Weapon (weapon_args[j]);
+						goto cycleweapon_end;
+					}
+					saw_weapon_without_ammo = true;
+				}
+			}
+
+			if (saw_weapon_without_ammo)
+				Con_Printf ("Not enough ammo\n");
+			goto cycleweapon_end;
+		}
+	}
+
+	// The player isn't holding anything in weapon_args, so switch to the first available weapon
+	for (int j = 0; j < weapon_args_len; j++)
+	{
+		if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+		{
+			if (Has_Ammo_For_Weapon (weapon_args[j]))
+			{
+				Switch_To_Weapon (weapon_args[j]);
+				goto cycleweapon_end;
+			}
+			saw_weapon_without_ammo = true;
+		}
+	}
+
+	if (saw_weapon_without_ammo)
+		Con_Printf ("Not enough ammo\n");
+	else
+		Con_Printf ("No weapon\n");
+cycleweapon_end:
+	free (weapon_args);
 }
 
 /*
@@ -601,4 +818,6 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-klook", IN_KLookUp);
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
+
+	Cmd_AddCommand ("cycleweapon", IN_CycleWeapon);
 }
