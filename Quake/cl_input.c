@@ -265,6 +265,26 @@ void IN_Impulse (void)
 	in_impulse = atoi (Cmd_Argv (1));
 }
 
+static qboolean Has_Weapon (int weapon)
+{
+	switch (weapon)
+	{
+	case IT_AXE:
+		// compatibility with alkaline which doesn't keep IT_AXE in STAT_ITEMS
+		if (!rogue && cl.stats[STAT_ALK_WEAPONS] & weapon)
+			return true;
+		break;
+	case ALK_WEAPON_CHAINSAW:
+	case ALK_WEAPON_PLASMA:
+	case ALK_WEAPON_LASER_CANNON:
+	case ALK_WEAPON_PROXIMITY_GUN:
+		if (cl.stats[STAT_ALK_WEAPONS] & weapon)
+			return true;
+		break;
+	}
+	return cl.stats[STAT_ITEMS] & weapon;
+}
+
 static qboolean Has_Ammo_For_Weapon (int weapon)
 {
 	// TODO handle rogue alt guns and ammo types properly. Will need to track
@@ -284,6 +304,8 @@ static qboolean Has_Ammo_For_Weapon (int weapon)
 		return cl.stats[STAT_ROCKETS] >= 1;
 	case IT_LIGHTNING:
 	case HIT_LASER_CANNON:
+	case ALK_WEAPON_PLASMA:
+	case ALK_WEAPON_LASER_CANNON:
 		return cl.stats[STAT_CELLS] >= 1;
 	case HIT_MJOLNIR:
 		return cl.stats[STAT_CELLS] >= 15;
@@ -298,7 +320,8 @@ static qboolean Has_Ammo_For_Weapon (int weapon)
 			// TODO should be lava nails
 			return cl.stats[STAT_NAILS] >= 2;
 		else
-			return false;
+			// ALK_WEAPON_PROXIMITY_GUN
+			return cl.stats[STAT_ROCKETS] >= 2;
 	case RIT_MULTI_GRENADE:
 	case RIT_MULTI_ROCKET:
 		if (rogue)
@@ -315,6 +338,7 @@ static qboolean Has_Ammo_For_Weapon (int weapon)
 		else
 			return false;
 	case RIT_AXE:
+	case ALK_WEAPON_CHAINSAW:
 		return true;
 	default:
 		return false;
@@ -347,9 +371,11 @@ static void Switch_To_Weapon (int weapon)
 		in_impulse = 8;
 		break;
 	case HIT_LASER_CANNON:
+	case ALK_WEAPON_LASER_CANNON:
 		in_impulse = 225;
 		break;
 	case HIT_MJOLNIR:
+	case ALK_WEAPON_CHAINSAW:
 		in_impulse = 226;
 		break;
 	case RIT_LAVA_NAILGUN: // same as IT_AXE
@@ -359,7 +385,10 @@ static void Switch_To_Weapon (int weapon)
 			in_impulse = 1;
 		break;
 	case RIT_LAVA_SUPER_NAILGUN:
-		in_impulse = 61;
+		if (rogue)
+			in_impulse = 61;
+		else // ALK_WEAPON_PROXIMITY_GUN
+			in_impulse = 229;
 		break;
 	case RIT_MULTI_GRENADE:
 		in_impulse = 62;
@@ -375,6 +404,9 @@ static void Switch_To_Weapon (int weapon)
 		break;
 	case RIT_AXE:
 		in_impulse = 1;
+		break;
+	case ALK_WEAPON_PLASMA:
+		in_impulse = 227;
 		break;
 	}
 }
@@ -430,7 +462,7 @@ void IN_CycleWeapon (void)
 			// The player is holding a weapon in weapon_args, so switch to the next available weapon
 			for (int j = i + 1; j < weapon_args_len; j++)
 			{
-				if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+				if (weapon_args[j] && Has_Weapon (weapon_args[j]))
 				{
 					if (Has_Ammo_For_Weapon (weapon_args[j]))
 					{
@@ -442,7 +474,7 @@ void IN_CycleWeapon (void)
 			}
 			for (int j = 0; j < i; j++)
 			{
-				if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+				if (weapon_args[j] && Has_Weapon (weapon_args[j]))
 				{
 					if (Has_Ammo_For_Weapon (weapon_args[j]))
 					{
@@ -462,7 +494,7 @@ void IN_CycleWeapon (void)
 	// The player isn't holding anything in weapon_args, so switch to the first available weapon
 	for (int j = 0; j < weapon_args_len; j++)
 	{
-		if (weapon_args[j] && cl.stats[STAT_ITEMS] & weapon_args[j])
+		if (weapon_args[j] && Has_Weapon (weapon_args[j]))
 		{
 			if (Has_Ammo_For_Weapon (weapon_args[j]))
 			{

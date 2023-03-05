@@ -147,6 +147,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define STAT_PUNCHANGLE_Y  27 // nq-emu
 #define STAT_PUNCHANGLE_Z  28 // nq-emu
 
+#define STAT_ALK_WEAPONS 33 // used by alkaline mod
+
 // stock defines
 //
 #define IT_SHOTGUN			1
@@ -213,6 +215,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define HIT_EMPATHY_SHIELDS	  (1 << (23 + 3))
 
 //===========================================
+// alkaline mod defines
+#define ALK_WEAPON_CHAINSAW		 256
+#define ALK_WEAPON_PLASMA		 512
+#define ALK_WEAPON_LASER_CANNON	 1024
+#define ALK_WEAPON_PROXIMITY_GUN 8192
 
 #define MAX_SCOREBOARD	   16
 #define MAX_SCOREBOARDNAME 32
