@@ -44,7 +44,7 @@ int r_numparticles;
 gltexture_t *particletexture, *particletexture1, *particletexture2, *particletexture3, *particletexture4; // johnfitz
 float		 texturescalefactor; // johnfitz -- compensate for apparent size of different particle textures
 
-cvar_t r_particles = {"r_particles", "1", CVAR_ARCHIVE};		 // johnfitz
+cvar_t r_particles = {"r_particles", "2", CVAR_ARCHIVE};		 // johnfitz
 cvar_t r_quadparticles = {"r_quadparticles", "1", CVAR_ARCHIVE}; // johnfitz
 
 extern cvar_t r_showtris;
@@ -69,6 +69,8 @@ int R_ParticleTextureLookup (int x, int y, int sharpness)
 	a = q_min (a, 255);
 	return a;
 }
+
+static void R_SetParticleTexture_f (cvar_t *var);
 
 /*
 ===============
@@ -123,8 +125,7 @@ void R_InitParticleTextures (void)
 		NULL, "particle3", 64, 64, SRC_RGBA, particle3_data, "", (src_offset_t)particle3_data, TEXPREF_PERSIST | TEXPREF_ALPHA | TEXPREF_LINEAR);
 
 	// set default
-	particletexture = particletexture1;
-	texturescalefactor = 1.27;
+	R_SetParticleTexture_f (&r_particles);
 }
 
 /*
