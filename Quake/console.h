@@ -72,6 +72,11 @@ void	 Con_UpdateMouseState (void);
 void	 Con_SelectAll (void);
 qboolean Con_CopySelectionToClipboard (void);
 
+void Con_Printf2 (qboolean use_stdout, const char *fmt, ...);
+void Con_VPrintf2 (qboolean use_stdout, const char *fmt, va_list argptr);
+void Con_SafePrintf2 (qboolean use_stdout, const char *fmt, ...);
+void Con_SafeVPrintf2 (qboolean use_stdout, const char *fmt, va_list argptr);
+
 //
 // debuglog
 //
