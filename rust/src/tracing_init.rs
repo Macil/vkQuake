@@ -1,6 +1,6 @@
 #[cfg(not(test))]
 pub fn init() {
-    use crate::{adapters::console::quake_print, quake_println};
+    use crate::{adapters::console::quake_print_no_stdout, quake_println};
     use tracing::metadata::LevelFilter;
     use tracing_subscriber::{prelude::*, EnvFilter, Registry};
 
@@ -9,7 +9,9 @@ pub fn init() {
     impl std::io::Write for QuakeWriter {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
             let message = std::str::from_utf8(buf).unwrap_or("QuakeWriter failure: Invalid UTF-8");
-            quake_print(message);
+            // We're handling writing it to stdout with color ourselves, so don't
+            // let Quake's console code do it too.
+            quake_print_no_stdout(message);
             Ok(buf.len())
         }
 
