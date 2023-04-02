@@ -486,18 +486,32 @@ Handles cursor positioning, line wrapping, etc
 #define MAXPRINTMSG 4096
 void Con_Printf (const char *fmt, ...)
 {
-	va_list			argptr;
+	va_list argptr;
+	va_start (argptr, fmt);
+	Con_VPrintf2 (true, fmt, argptr);
+	va_end (argptr);
+}
+
+void Con_Printf2 (qboolean use_stdout, const char *fmt, ...)
+{
+	va_list argptr;
+	va_start (argptr, fmt);
+	Con_VPrintf2 (use_stdout, fmt, argptr);
+	va_end (argptr);
+}
+
+void Con_VPrintf2 (qboolean use_stdout, const char *fmt, va_list argptr)
+{
 	char			msg[MAXPRINTMSG];
 	static qboolean inupdate;
 
-	va_start (argptr, fmt);
 	q_vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
 
 	if (con_redirect_flush)
 		q_strlcat (con_redirect_buffer, msg, sizeof (con_redirect_buffer));
 	// also echo to debugging console
-	Sys_Printf ("%s", msg);
+	if (use_stdout)
+		Sys_Printf ("%s", msg);
 
 	// log all messages to file
 	if (con_debuglog)
@@ -624,17 +638,25 @@ Okay to call even when the screen can't be updated
 void Con_SafePrintf (const char *fmt, ...)
 {
 	va_list argptr;
-	char	msg[1024];
-	int		temp;
-
 	va_start (argptr, fmt);
-	q_vsnprintf (msg, sizeof (msg), fmt, argptr);
+	Con_SafeVPrintf2 (true, fmt, argptr);
 	va_end (argptr);
+}
 
+void Con_SafePrintf2 (qboolean use_stdout, const char *fmt, ...)
+{
+	va_list argptr;
+	va_start (argptr, fmt);
+	Con_SafeVPrintf2 (use_stdout, fmt, argptr);
+	va_end (argptr);
+}
+
+void Con_SafeVPrintf2 (qboolean use_stdout, const char *fmt, va_list argptr)
+{
 	SDL_LockMutex (con_mutex);
-	temp = scr_disabled_for_loading;
+	int temp = scr_disabled_for_loading;
 	scr_disabled_for_loading = true;
-	Con_Printf ("%s", msg);
+	Con_VPrintf2 (use_stdout, fmt, argptr);
 	scr_disabled_for_loading = temp;
 	SDL_UnlockMutex (con_mutex);
 }
