@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * # Safety
+ * Should only be called by Quake during shutdown.
+ */
+void Rust_Shutdown(void);
+
 void Rust_Frame(void);
 
 /**

@@ -14,23 +14,29 @@ pub fn player_found_secret(cl_game: &mut ClGame, secret: u16) {
         let map_display_name = cl_game.map_display_name()?.to_owned();
         let map_secret_count = cl_game.map_secret_count()?;
 
-        RUNTIME.spawn_blocking(move || {
-            (|| {
-                let mut db = crate::DB.get().unwrap().lock().unwrap();
+        RUNTIME
+            .read()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .spawn_blocking(move || {
+                (|| {
+                    let mut db_guard = crate::DB.lock().unwrap();
+                    let db = db_guard.as_mut().unwrap();
 
-                db.insert_secret_found(
-                    &map_name,
-                    &game,
-                    &map_display_name,
-                    map_secret_count,
-                    secret,
-                )?;
-                Ok(())
-            })()
-            .unwrap_or_else(|err: anyhow::Error| {
-                tracing::error!("player_stats player_found_secret: {}", err);
+                    db.insert_secret_found(
+                        &map_name,
+                        &game,
+                        &map_display_name,
+                        map_secret_count,
+                        secret,
+                    )?;
+                    Ok(())
+                })()
+                .unwrap_or_else(|err: anyhow::Error| {
+                    tracing::error!("player_stats player_found_secret: {}", err);
+                });
             });
-        });
         Ok(())
     })()
     .unwrap_or_else(|err: anyhow::Error| {
@@ -63,30 +69,36 @@ pub fn level_completed(cl_game: &mut ClGame, skill: u16, secrets: &[u16]) {
         // TODO
         let cheats_used = false;
 
-        RUNTIME.spawn_blocking(move || {
-            (|| {
-                let mut db = crate::DB.get().unwrap().lock().unwrap();
+        RUNTIME
+            .read()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .spawn_blocking(move || {
+                (|| {
+                    let mut db_guard = crate::DB.lock().unwrap();
+                    let db = db_guard.as_mut().unwrap();
 
-                db.insert_map_completion(
-                    &map_name,
-                    &game,
-                    &map_display_name,
-                    map_secret_count,
-                    &gametype,
-                    skill,
-                    max_simultaneous_players,
-                    cheats_used,
-                    completed_time,
-                    &secrets,
-                    monsters_killed,
-                    monsters_total,
-                )?;
-                Ok(())
-            })()
-            .unwrap_or_else(|err: anyhow::Error| {
-                tracing::error!("player_stats level_completed: {}", err);
+                    db.insert_map_completion(
+                        &map_name,
+                        &game,
+                        &map_display_name,
+                        map_secret_count,
+                        &gametype,
+                        skill,
+                        max_simultaneous_players,
+                        cheats_used,
+                        completed_time,
+                        &secrets,
+                        monsters_killed,
+                        monsters_total,
+                    )?;
+                    Ok(())
+                })()
+                .unwrap_or_else(|err: anyhow::Error| {
+                    tracing::error!("player_stats level_completed: {}", err);
+                });
             });
-        });
         Ok(())
     })()
     .unwrap_or_else(|err: anyhow::Error| {
