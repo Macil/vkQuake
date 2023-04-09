@@ -19,18 +19,18 @@ use axum::{
 use axum_helpers::QuakeAPIResponseError;
 use db::QuakeDb;
 use hyperlocal_with_windows::{remove_unix_socket_if_present, UnixServerExt};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::{net::SocketAddr, time::Duration};
 use tokio::runtime::Runtime;
 use tower::ServiceBuilder;
 use tower_http::{trace::TraceLayer, validate_request::ValidateRequestHeaderLayer};
 
 /// Should only need to be used directly by synchronous code called from C.
-pub(crate) static RUNTIME: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
+pub(crate) static RUNTIME: std::sync::RwLock<Option<Runtime>> = std::sync::RwLock::new(None);
 
 // TODO maybe use message passing to communicate to a dedicated db task instead of using a Mutex.
-pub(crate) static DB: OnceCell<std::sync::Mutex<QuakeDb>> = OnceCell::new();
+pub(crate) static DB: std::sync::Mutex<Option<QuakeDb>> = std::sync::Mutex::new(None);
 
 pub(crate) static REMOTE_API_HTTP_ENABLED: OnceCell<Cvar> = OnceCell::new();
 pub(crate) static RECORD_PLAYER_STATS: OnceCell<Cvar> = OnceCell::new();
@@ -66,6 +66,8 @@ pub(crate) fn init(game_init: &mut GameInit) {
     // I'm just not sure if it distinguishes commands from maps vs the player and what it allows specifically.
     // Also look at how Host_Savegame_f checks cmd_source.
 
+    RUNTIME.write().unwrap().replace(Runtime::new().unwrap());
+
     REMOTE_API_HTTP_ENABLED
         .set(Cvar::register(
             game_init,
@@ -84,8 +86,7 @@ pub(crate) fn init(game_init: &mut GameInit) {
         ))
         .unwrap();
 
-    DB.set(std::sync::Mutex::new(QuakeDb::new().unwrap()))
-        .unwrap();
+    DB.lock().unwrap().replace(QuakeDb::new().unwrap());
 
     Cvar::load_early(game_init, &[REMOTE_API_HTTP_ENABLED.get().unwrap().name()]).unwrap();
 
@@ -95,7 +96,7 @@ pub(crate) fn init(game_init: &mut GameInit) {
         .unwrap()
         .value(&game_init.game);
 
-    RUNTIME.spawn(async move {
+    RUNTIME.read().unwrap().as_ref().unwrap().spawn(async move {
         tokio::spawn(async move {
             if let Err(e) = listen_on_unix_socket().await {
                 tracing::error!("Error listening on unix socket: {}", e);
@@ -212,4 +213,20 @@ async fn rcon(
     })
     .await?;
     Ok(Json(PostRconResponse { output }))
+}
+
+/// # Safety
+/// Should only be called by Quake during shutdown.
+#[no_mangle]
+pub unsafe extern "C" fn Rust_Shutdown() {
+    let runtime = RUNTIME.write().unwrap().take();
+    if let Some(runtime) = runtime {
+        runtime.shutdown_timeout(Duration::from_millis(100));
+    }
+
+    // Manually close the db so we're sure nobody is using it during shutdown.
+    let db = DB.lock().unwrap().take();
+    if let Some(db) = db {
+        db.close();
+    }
 }
