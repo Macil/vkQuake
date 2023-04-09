@@ -99,4 +99,10 @@ impl QuakeDb {
         )?;
         Ok(())
     }
+
+    pub fn close(self) {
+        if let Err((_, err)) = self.conn.close() {
+            tracing::error!("Failed to close database: {}", err);
+        }
+    }
 }
