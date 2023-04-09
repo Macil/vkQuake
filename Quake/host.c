@@ -1123,6 +1123,7 @@ void Host_Shutdown (void)
 
 	if (cls.state != ca_dedicated)
 	{
+		Rust_Shutdown ();
 		if (con_initialized)
 			History_Shutdown ();
 		BGM_Shutdown ();
