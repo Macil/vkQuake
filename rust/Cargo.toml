@@ -30,5 +30,5 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["default", "env-filter"] }
 
 [build-dependencies]
-bindgen = "0.63.0"
+bindgen = "0.69.1"
 pkg-config = "0.3.26"
