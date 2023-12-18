@@ -83,9 +83,11 @@ fn run_bindgen() {
         .layout_tests(false)
         // This is needed on msvc builds
         .blocklist_type(r".*IMAGE_TLS_DIRECTORY.*")
-        // These two are needed on mingw builds
+        // These are needed on mingw builds
         .blocklist_type(r"_JUMP_BUFFER")
         .blocklist_type(r"__mingw_ldbl_type_t")
+        .blocklist_type(r"_complex")
+        .blocklist_function(r"_cabs")
         .parse_callbacks(Box::new(ignored_macros));
 
     for include_path in compute_include_paths() {
