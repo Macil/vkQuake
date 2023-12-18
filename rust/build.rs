@@ -43,8 +43,6 @@ impl bindgen::callbacks::ParseCallbacks for IgnoreMacros {
 }
 
 fn run_bindgen() {
-    println!("cargo:rerun-if-changed=wrapper.h");
-
     if cfg!(target_os = "windows") && env::var("LIBCLANG_PATH").is_err() {
         if let Ok(path) = env::var("PATH") {
             let mut extra_paths_to_check = Vec::new();
