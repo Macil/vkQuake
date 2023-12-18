@@ -47,7 +47,17 @@ fn run_bindgen() {
 
     if cfg!(target_os = "windows") && env::var("LIBCLANG_PATH").is_err() {
         if let Ok(path) = env::var("PATH") {
-            let libclang_path = path.split(';').find(|path| {
+            let mut extra_paths_to_check = Vec::new();
+
+            if cfg!(target_arch = "x86_64") {
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin");
+            } else if cfg!(target_arch = "x86") {
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin");
+            } else if cfg!(target_arch = "aarch64") {
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\ARM64\\bin");
+            }
+
+            let libclang_path = path.split(';').chain(extra_paths_to_check).find(|path| {
                     PathBuf::from(path)
                         .join("libclang.dll")
                         .exists()
