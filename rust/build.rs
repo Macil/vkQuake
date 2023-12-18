@@ -88,8 +88,7 @@ fn run_bindgen() {
         // These two are needed on mingw builds
         .blocklist_type(r"_JUMP_BUFFER")
         .blocklist_type(r"__mingw_ldbl_type_t")
-        .parse_callbacks(Box::new(ignored_macros))
-        .rustfmt_bindings(true);
+        .parse_callbacks(Box::new(ignored_macros));
 
     for include_path in compute_include_paths() {
         bindings = bindings.clang_arg(format!("-I{include_path}"));
@@ -98,7 +97,7 @@ fn run_bindgen() {
     let bindings = bindings
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
 
