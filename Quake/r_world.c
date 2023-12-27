@@ -1000,6 +1000,7 @@ static void R_FlushBatch (
 				constant_factor = -1.f;
 				slope_factor = -0.25f;
 			}
+			constant_factor = R_AdjustDepthBiasConstantFactor (constant_factor);
 		}
 		vkCmdSetDepthBias (cbx->cb, constant_factor, 0.0f, slope_factor);
 

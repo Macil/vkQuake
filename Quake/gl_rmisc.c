@@ -30,6 +30,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t r_lodbias = {"r_lodbias", "1", CVAR_ARCHIVE};
 cvar_t gl_lodbias = {"gl_lodbias", "0", CVAR_ARCHIVE};
 
+// Workaround for Steam Deck AMD driver bug that causes depthBiasConstantFactor
+// to render surfaces all the way ahead or behind all other surfaces.
+// 0 automatic based on system, 1 force workaround, -1 no automatic use of workaround.
+cvar_t r_disable_depthbias_cf = {"r_disable_depthbias_cf", "0", CVAR_ARCHIVE};
+
 // johnfitz -- new cvars
 extern cvar_t r_clearcolor;
 extern cvar_t r_fastclear;
@@ -194,6 +199,14 @@ int GL_MemoryTypeFromProperties (uint32_t type_bits, VkFlags requirements_mask, 
 
 	Sys_Error ("Could not find memory type");
 	return 0;
+}
+
+float R_AdjustDepthBiasConstantFactor (float constant_factor)
+{
+	if (r_disable_depthbias_cf.value == 1 || (vulkan_globals.automatic_disable_depthbias_cf && r_disable_depthbias_cf.value == 0))
+		return 0.0f;
+
+	return constant_factor;
 }
 
 /*
@@ -2558,8 +2571,6 @@ static void R_CreateFTEParticlesPipelines ()
 
 	infos.rasterization_state.cullMode = VK_CULL_MODE_NONE;
 	infos.rasterization_state.depthBiasEnable = VK_TRUE;
-	infos.rasterization_state.depthBiasConstantFactor = OFFSET_DECAL;
-	infos.rasterization_state.depthBiasSlopeFactor = 1.0f;
 
 	infos.depth_stencil_state.depthTestEnable = VK_TRUE;
 	infos.depth_stencil_state.depthWriteEnable = VK_FALSE;
@@ -3620,6 +3631,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_scale);
 	Cvar_RegisterVariable (&r_lodbias);
 	Cvar_RegisterVariable (&gl_lodbias);
+	Cvar_RegisterVariable (&r_disable_depthbias_cf);
 	Cvar_SetCallback (&r_scale, R_ScaleChanged_f);
 	Cvar_SetCallback (&r_lodbias, R_ScaleChanged_f);
 	Cvar_SetCallback (&gl_lodbias, R_ScaleChanged_f);

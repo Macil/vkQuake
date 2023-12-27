@@ -951,7 +951,19 @@ static void GL_InitDevice (void)
 	Con_Printf ("Device: %s\n", vulkan_globals.device_properties.deviceName);
 
 	if (driver_properties_available)
-		Con_Printf ("Driver: %s %s\n", driver_properties.driverName, driver_properties.driverInfo);
+		Con_Printf ("Driver: %s; %s\n", driver_properties.driverName, driver_properties.driverInfo);
+
+	vulkan_globals.automatic_disable_depthbias_cf = false;
+
+	// Once the Steam Deck has a driver update that fixes the depth bias issue, we should either make
+	// this stricter by removing the device name check, or remove it entirely.
+	if (!strcmp (vulkan_globals.device_properties.deviceName, "AMD Custom GPU 0405 (RADV VANGOGH)") ||
+		(driver_properties_available && !strcmp (driver_properties.driverName, "radv") &&
+		 !strcmp (driver_properties.driverInfo, "Mesa 23.3.0-devel (git-85a01d8fa0)")))
+	{
+		Con_Printf ("Detected system that needs the disable_depthbias_cf workaround.\n");
+		vulkan_globals.automatic_disable_depthbias_cf = true;
+	}
 
 	if (!found_swapchain_extension)
 		Sys_Error ("Couldn't find %s extension", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
