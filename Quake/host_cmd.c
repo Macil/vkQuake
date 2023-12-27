@@ -295,9 +295,9 @@ void Modlist_Init (void)
 #else
 void Modlist_Init (void)
 {
-	DIR *dir_p, *mod_dir_p;
+	DIR			  *dir_p, *mod_dir_p;
 	struct dirent *dir_t;
-	char dir_string[MAX_OSPATH], mod_string[MAX_OSPATH];
+	char		   dir_string[MAX_OSPATH], mod_string[MAX_OSPATH];
 
 	q_snprintf (dir_string, sizeof (dir_string), "%s/", com_basedir);
 	dir_p = opendir (dir_string);

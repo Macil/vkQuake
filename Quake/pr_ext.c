@@ -1406,7 +1406,7 @@ default:
 		default:
 		verbatim:
 			if (o < end - 1)
-*o++ = *s;
+				*o++ = *s;
 			s++;
 			break;
 		}
@@ -1520,36 +1520,36 @@ static void PF_tokenizebyseparator (void)
 			/*see if its a separator*/
 			if (!*str)
 			{
-qctoken[qctoken_count].end = str - start;
-found = true;
+				qctoken[qctoken_count].end = str - start;
+				found = true;
 			}
 			else
 			{
-for (s = 0; s < seps; s++)
-{
-	if (!strncmp (str, sep[s], seplen[s]))
-	{
-		qctoken[qctoken_count].end = str - start;
-		str += seplen[s];
-		found = true;
-		break;
-	}
-}
+				for (s = 0; s < seps; s++)
+				{
+					if (!strncmp (str, sep[s], seplen[s]))
+					{
+						qctoken[qctoken_count].end = str - start;
+						str += seplen[s];
+						found = true;
+						break;
+					}
+				}
 			}
 			/*it was, split it out*/
 			if (found)
 			{
-tlen = qctoken[qctoken_count].end - qctoken[qctoken_count].start;
-qctoken[qctoken_count].token = Mem_Alloc (tlen + 1);
-memcpy (qctoken[qctoken_count].token, start + qctoken[qctoken_count].start, tlen);
-qctoken[qctoken_count].token[tlen] = 0;
+				tlen = qctoken[qctoken_count].end - qctoken[qctoken_count].start;
+				qctoken[qctoken_count].token = Mem_Alloc (tlen + 1);
+				memcpy (qctoken[qctoken_count].token, start + qctoken[qctoken_count].start, tlen);
+				qctoken[qctoken_count].token[tlen] = 0;
 
-qctoken_count++;
+				qctoken_count++;
 
-if (*str && qctoken_count < MAXQCTOKENS)
-	qctoken[qctoken_count].start = str - start;
-else
-	break;
+				if (*str && qctoken_count < MAXQCTOKENS)
+					qctoken[qctoken_count].start = str - start;
+				else
+					break;
 			}
 			str++;
 		}
@@ -1864,8 +1864,8 @@ static void PF_frameforname (void)
 		{
 			if (!strcmp (alias->frames[i].name, framename))
 			{
-G_FLOAT (OFS_RETURN) = i;
-break;
+				G_FLOAT (OFS_RETURN) = i;
+				break;
 			}
 		}
 	}
@@ -2021,26 +2021,26 @@ static float getsurface_clippointpoly (qmodel_t *model, msurface_t *surf, vec3_t
 			edge = model->surfedges[--e];
 			if (edge < 0)
 			{
-v1 = &model->vertexes[model->edges[-edge].v[0]];
-v2 = &model->vertexes[model->edges[-edge].v[1]];
+				v1 = &model->vertexes[model->edges[-edge].v[0]];
+				v2 = &model->vertexes[model->edges[-edge].v[1]];
 			}
 			else
 			{
-v2 = &model->vertexes[model->edges[edge].v[0]];
-v1 = &model->vertexes[model->edges[edge].v[1]];
+				v2 = &model->vertexes[model->edges[edge].v[0]];
+				v1 = &model->vertexes[model->edges[edge].v[1]];
 			}
 
 			VectorSubtract (v1->position, v2->position, edgedir);
 			CrossProduct (edgedir, surf->plane->normal, edgenormal);
 			if (!(surf->flags & SURF_PLANEBACK))
 			{
-VectorSubtract (vec3_origin, edgenormal, edgenormal);
+				VectorSubtract (vec3_origin, edgenormal, edgenormal);
 			}
 			VectorNormalize (edgenormal);
 
 			dist = DotProduct (v1->position, edgenormal) - DotProduct (cpoint, edgenormal);
 			if (dist < 0)
-VectorMA (cpoint, dist, edgenormal, cpoint);
+				VectorMA (cpoint, dist, edgenormal, cpoint);
 		}
 
 		VectorSubtract (cpoint, point, temp);
@@ -2103,12 +2103,12 @@ static void PF_getsurfacenearpoint (void)
 		{
 			for (i = 0; i < nearsurface_cache_entries; i++)
 			{
-dist = getsurface_clippointpoly (model, surf + nearsurface_cache[i], point, cpoint, bestdist, &distsquare);
-if (dist < bestdist)
-{
-	bestdist = dist;
-	bestsurf = nearsurface_cache[i];
-}
+				dist = getsurface_clippointpoly (model, surf + nearsurface_cache[i], point, cpoint, bestdist, &distsquare);
+				if (dist < bestdist)
+				{
+					bestdist = dist;
+					bestsurf = nearsurface_cache[i];
+				}
 			}
 			cached = true;
 		}
@@ -2127,15 +2127,15 @@ if (dist < bestdist)
 			dist = getsurface_clippointpoly (model, surf, point, cpoint, bestdist, &distsquare);
 			if (dist < bestdist)
 			{
-bestdist = dist;
-bestsurf = i;
+				bestdist = dist;
+				bestsurf = i;
 			}
 			if (cacheable && distsquare < NEARSURFACE_CACHEDIST * NEARSURFACE_CACHEDIST)
 			{
-if (nearsurface_cache_entries == NEARSURFACE_CACHESIZE)
-	nearsurface_cache_valid = false;
-else
-	nearsurface_cache[nearsurface_cache_entries++] = i;
+				if (nearsurface_cache_entries == NEARSURFACE_CACHESIZE)
+					nearsurface_cache_valid = false;
+				else
+					nearsurface_cache[nearsurface_cache_entries++] = i;
 			}
 		}
 	}
@@ -2231,7 +2231,7 @@ static void PF_getsurfacepointattribute (void)
 		case 3: // normal
 			VectorCopy (fa->plane->normal, G_VECTOR (OFS_RETURN));
 			if (fa->flags & SURF_PLANEBACK)
-VectorInverse (G_VECTOR (OFS_RETURN));
+				VectorInverse (G_VECTOR (OFS_RETURN));
 			break;
 		case 4: // st coord
 			G_FLOAT (OFS_RETURN + 0) = (DotProduct (v->position, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3]) / fa->texinfo->texture->width;
@@ -2332,16 +2332,16 @@ static void PF_spawnclient (void)
 		{
 			if (!svs.clients[i].active)
 			{
-svs.clients[i].netconnection = NULL; // botclients have no net connection, obviously.
-SV_ConnectClient (i);
-svs.clients[i].spawned = true;
-ent = svs.clients[i].edict;
-memset (&ent->v, 0, qcvm->progs->entityfields * 4);
-ent->v.colormap = NUM_FOR_EDICT (ent);
-ent->v.team = (svs.clients[i].colors & 15) + 1;
-ent->v.netname = PR_SetEngineString (svs.clients[i].name);
-RETURN_EDICT (ent);
-return;
+				svs.clients[i].netconnection = NULL; // botclients have no net connection, obviously.
+				SV_ConnectClient (i);
+				svs.clients[i].spawned = true;
+				ent = svs.clients[i].edict;
+				memset (&ent->v, 0, qcvm->progs->entityfields * 4);
+				ent->v.colormap = NUM_FOR_EDICT (ent);
+				ent->v.team = (svs.clients[i].colors & 15) + 1;
+				ent->v.netname = PR_SetEngineString (svs.clients[i].name);
+				RETURN_EDICT (ent);
+				return;
 			}
 		}
 	RETURN_EDICT (qcvm->edicts);
@@ -2885,7 +2885,7 @@ static void PF_whichpack (void)
 		searchpath_t *path;
 		for (path = com_searchpaths; path; path = path->next)
 			if (!path->pack && path->path_id == path_id)
-break; // okay, this one looks like one we can report
+				break; // okay, this one looks like one we can report
 
 		// sandbox it by stripping the basedir
 		fname = path->filename;
@@ -3115,19 +3115,19 @@ static void PF_buf_implode (void)
 		{
 			if (retlen)
 			{
-if (retlen + gluelen + 1 > STRINGTEMP_LENGTH)
-{
-	Con_Printf ("PF_buf_implode: tempstring overflow\n");
-	break;
-}
-memcpy (ret + retlen, glue, gluelen);
-retlen += gluelen;
+				if (retlen + gluelen + 1 > STRINGTEMP_LENGTH)
+				{
+					Con_Printf ("PF_buf_implode: tempstring overflow\n");
+					break;
+				}
+				memcpy (ret + retlen, glue, gluelen);
+				retlen += gluelen;
 			}
 			l = strlen (strings[i]);
 			if (retlen + l + 1 > STRINGTEMP_LENGTH)
 			{
-Con_Printf ("PF_buf_implode: tempstring overflow\n");
-break;
+				Con_Printf ("PF_buf_implode: tempstring overflow\n");
+				break;
 			}
 			memcpy (ret + retlen, strings[i], l);
 			retlen += l;
@@ -3213,7 +3213,7 @@ static int PF_bufstr_add_internal (unsigned int bufno, const char *string, int a
 		// find a hole
 		for (index = 0; index < strbuflist[bufno].used; index++)
 			if (!strbuflist[bufno].strings[index])
-break;
+				break;
 	}
 
 	// expand it if needed
@@ -3632,7 +3632,7 @@ static void PF_infokey_internal (qboolean returnfloat)
 			float		 total = 0;
 			unsigned int j;
 			for (j = 0; j < NUM_PING_TIMES; j++)
-total += client->ping_times[j];
+				total += client->ping_times[j];
 			total /= NUM_PING_TIMES;
 			q_snprintf (buf, sizeof (buf), "%f", total);
 		}
@@ -3641,17 +3641,17 @@ total += client->ping_times[j];
 			switch (sv.protocol)
 			{
 			case PROTOCOL_NETQUAKE:
-r = "quake";
-break;
+				r = "quake";
+				break;
 			case PROTOCOL_FITZQUAKE:
-r = "fitz666";
-break;
+				r = "fitz666";
+				break;
 			case PROTOCOL_RMQ:
-r = "rmq999";
-break;
+				r = "rmq999";
+				break;
 			default:
-r = "";
-break;
+				r = "";
+				break;
 			}
 		}
 		else if (!strcmp (key, "name"))
@@ -3715,11 +3715,11 @@ static void PF_multicast_internal (qboolean reliable, byte *pvs, unsigned int re
 		{
 			for (i = 0; i < (unsigned int)svs.maxclients; i++)
 			{
-if (!svs.clients[i].active)
-	continue;
-if (!(svs.clients[i].protocol_pext2 & requireext2))
-	continue;
-SZ_Write ((reliable ? &svs.clients[i].message : &svs.clients[i].datagram), sv.multicast.data, sv.multicast.cursize);
+				if (!svs.clients[i].active)
+					continue;
+				if (!(svs.clients[i].protocol_pext2 & requireext2))
+					continue;
+				SZ_Write ((reliable ? &svs.clients[i].message : &svs.clients[i].datagram), sv.multicast.data, sv.multicast.cursize);
 			}
 		}
 	}
@@ -3728,10 +3728,10 @@ SZ_Write ((reliable ? &svs.clients[i].message : &svs.clients[i].datagram), sv.mu
 		for (i = 0; i < (unsigned int)svs.maxclients; i++)
 		{
 			if (!svs.clients[i].active)
-continue;
+				continue;
 
 			if (requireext2 && !(svs.clients[i].protocol_pext2 & requireext2))
-continue;
+				continue;
 
 			// figure out which cluster (read: pvs index) to use.
 			playerleaf = Mod_PointInLeaf (svs.clients[i].edict->v.origin, qcvm->worldmodel);
@@ -3739,11 +3739,11 @@ continue;
 			cluster--; // pvs is 1-based, leaf 0 is discarded.
 			if (cluster < 0 || (pvs[cluster >> 3] & (1 << (cluster & 7))))
 			{
-// they can see it. add it in to whichever buffer is appropriate.
-if (reliable)
-	SZ_Write (&svs.clients[i].message, sv.multicast.data, sv.multicast.cursize);
-else
-	SZ_Write (&svs.clients[i].datagram, sv.multicast.data, sv.multicast.cursize);
+				// they can see it. add it in to whichever buffer is appropriate.
+				if (reliable)
+					SZ_Write (&svs.clients[i].message, sv.multicast.data, sv.multicast.cursize);
+				else
+					SZ_Write (&svs.clients[i].datagram, sv.multicast.data, sv.multicast.cursize);
 			}
 		}
 	}
@@ -3851,27 +3851,27 @@ static void PF_uri_unescape (void)
 		{
 			hex = 0;
 			if (i[1] >= 'A' && i[1] <= 'F')
-hex += i[1] - 'A' + 10;
+				hex += i[1] - 'A' + 10;
 			else if (i[1] >= 'a' && i[1] <= 'f')
-hex += i[1] - 'a' + 10;
+				hex += i[1] - 'a' + 10;
 			else if (i[1] >= '0' && i[1] <= '9')
-hex += i[1] - '0';
+				hex += i[1] - '0';
 			else
 			{
-*o++ = *i++;
-continue;
+				*o++ = *i++;
+				continue;
 			}
 			hex <<= 4;
 			if (i[2] >= 'A' && i[2] <= 'F')
-hex += i[2] - 'A' + 10;
+				hex += i[2] - 'A' + 10;
 			else if (i[2] >= 'a' && i[2] <= 'f')
-hex += i[2] - 'a' + 10;
+				hex += i[2] - 'a' + 10;
 			else if (i[2] >= '0' && i[2] <= '9')
-hex += i[2] - '0';
+				hex += i[2] - '0';
 			else
 			{
-*o++ = *i++;
-continue;
+				*o++ = *i++;
+				continue;
 			}
 			*o++ = hex;
 			i += 3;
@@ -4055,10 +4055,10 @@ int PF_SV_ForceParticlePrecache (const char *s)
 		{
 			if (sv.state != ss_loading)
 			{
-MSG_WriteByte (&sv.multicast, svcdp_precache);
-MSG_WriteShort (&sv.multicast, i | 0x4000);
-MSG_WriteString (&sv.multicast, s);
-SV_Multicast (MULTICAST_ALL_R, NULL, 0, PEXT2_REPLACEMENTDELTAS); // FIXME
+				MSG_WriteByte (&sv.multicast, svcdp_precache);
+				MSG_WriteShort (&sv.multicast, i | 0x4000);
+				MSG_WriteString (&sv.multicast, s);
+				SV_Multicast (MULTICAST_ALL_R, NULL, 0, PEXT2_REPLACEMENTDELTAS); // FIXME
 			}
 
 			sv.particle_precache[i] = q_strdup (s); // weirdness to avoid issues with tempstrings
@@ -4089,8 +4089,8 @@ static void PF_sv_particleeffectnum (void)
 		{
 			if (sv.state != ss_loading && !pr_checkextension.value)
 			{
-if (pr_ext_warned_particleeffectnum++ < 3)
-	Con_Warning ("PF_sv_particleeffectnum(%s): Precache should only be done in spawn functions\n", s);
+				if (pr_ext_warned_particleeffectnum++ < 3)
+					Con_Warning ("PF_sv_particleeffectnum(%s): Precache should only be done in spawn functions\n", s);
 			}
 			G_FLOAT (OFS_RETURN) = i;
 			return;
@@ -4103,13 +4103,13 @@ if (pr_ext_warned_particleeffectnum++ < 3)
 		{
 			if (sv.state != ss_loading)
 			{
-if (pr_ext_warned_particleeffectnum++ < 3)
-	Con_Warning ("PF_sv_particleeffectnum(%s): Precache should only be done in spawn functions\n", s);
+				if (pr_ext_warned_particleeffectnum++ < 3)
+					Con_Warning ("PF_sv_particleeffectnum(%s): Precache should only be done in spawn functions\n", s);
 
-MSG_WriteByte (&sv.multicast, svcdp_precache);
-MSG_WriteShort (&sv.multicast, i | 0x4000);
-MSG_WriteString (&sv.multicast, s);
-SV_Multicast (MULTICAST_ALL_R, NULL, 0, PEXT2_REPLACEMENTDELTAS);
+				MSG_WriteByte (&sv.multicast, svcdp_precache);
+				MSG_WriteShort (&sv.multicast, i | 0x4000);
+				MSG_WriteString (&sv.multicast, s);
+				SV_Multicast (MULTICAST_ALL_R, NULL, 0, PEXT2_REPLACEMENTDELTAS);
 			}
 
 			sv.particle_precache[i] = q_strdup (s); // weirdness to avoid issues with tempstrings
@@ -4366,7 +4366,7 @@ static qpic_t *DrawQC_CachePic (const char *picname, unsigned int flags)
 		if (!strcmp (picname, qcpics[i].name))
 		{
 			if (qcpics[i].pic)
-return qcpics[i].pic;
+				return qcpics[i].pic;
 			break;
 		}
 	}
@@ -5171,56 +5171,56 @@ static void PF_checkextension (void)
 		{
 			if (qcextensions[i].checkextsupported)
 			{
-unsigned int		prot, pext1, pext2;
-extern int			sv_protocol;
-extern unsigned int sv_protocol_pext1;
-extern unsigned int sv_protocol_pext2;
-extern cvar_t		cl_nopext;
-if (sv.active || qcvm == &sv.qcvm)
-{ // server or client+server
-	prot = sv_protocol;
-	pext1 = sv_protocol_pext1;
-	pext2 = sv_protocol_pext2;
+				unsigned int		prot, pext1, pext2;
+				extern int			sv_protocol;
+				extern unsigned int sv_protocol_pext1;
+				extern unsigned int sv_protocol_pext2;
+				extern cvar_t		cl_nopext;
+				if (sv.active || qcvm == &sv.qcvm)
+				{ // server or client+server
+					prot = sv_protocol;
+					pext1 = sv_protocol_pext1;
+					pext2 = sv_protocol_pext2;
 
-	// if the server seems to be set up for singleplayer then filter by client settings. otherwise just assume the best.
-	if (!isDedicated && svs.maxclients == 1 && cl_nopext.value)
-		pext1 = pext2 = 0;
-}
-else if (cls.state == ca_connected)
-{ // client only (or demo)
-	prot = cl.protocol;
-	pext1 = cl.protocol_pext1;
-	pext2 = cl.protocol_pext2;
-}
-else
-{ // menuqc? ooer
-	prot = 0;
-	pext1 = 0;
-	pext2 = 0;
-}
-if (!qcextensions[i].checkextsupported (prot, pext1, pext2))
-{
-	if (!pr_checkextension.value)
-		Con_Printf ("Mod queried extension %s, but not enabled\n", extname);
-	G_FLOAT (OFS_RETURN) = false;
-	return;
-}
+					// if the server seems to be set up for singleplayer then filter by client settings. otherwise just assume the best.
+					if (!isDedicated && svs.maxclients == 1 && cl_nopext.value)
+						pext1 = pext2 = 0;
+				}
+				else if (cls.state == ca_connected)
+				{ // client only (or demo)
+					prot = cl.protocol;
+					pext1 = cl.protocol_pext1;
+					pext2 = cl.protocol_pext2;
+				}
+				else
+				{ // menuqc? ooer
+					prot = 0;
+					pext1 = 0;
+					pext2 = 0;
+				}
+				if (!qcextensions[i].checkextsupported (prot, pext1, pext2))
+				{
+					if (!pr_checkextension.value)
+						Con_Printf ("Mod queried extension %s, but not enabled\n", extname);
+					G_FLOAT (OFS_RETURN) = false;
+					return;
+				}
 			}
 
 			cvn = va ("pr_ext_%s", qcextensions[i].name);
 			for (i = 0; cvn[i]; i++)
-if (cvn[i] >= 'A' && cvn[i] <= 'Z')
-	cvn[i] = 'a' + (cvn[i] - 'A');
+				if (cvn[i] >= 'A' && cvn[i] <= 'Z')
+					cvn[i] = 'a' + (cvn[i] - 'A');
 			v = Cvar_Create (cvn, "1");
 			if (v && !v->value)
 			{
-if (!pr_checkextension.value)
-	Con_Printf ("Mod queried extension %s, but blocked by cvar\n", extname);
-G_FLOAT (OFS_RETURN) = false;
-return;
+				if (!pr_checkextension.value)
+					Con_Printf ("Mod queried extension %s, but blocked by cvar\n", extname);
+				G_FLOAT (OFS_RETURN) = false;
+				return;
 			}
 			if (!pr_checkextension.value)
-Con_Printf ("Mod found extension %s\n", extname);
+				Con_Printf ("Mod found extension %s\n", extname);
 			G_FLOAT (OFS_RETURN) = true;
 			return;
 		}
@@ -5259,26 +5259,27 @@ static void PF_checkbuiltin (void)
 		{
 			if (qcvm->builtins[binum] == PF_Fixme)
 			{
-G_FLOAT (OFS_RETURN) = false; // the builtin with that number isn't defined.
-for (i = 0; i < sizeof (extensionbuiltins) / sizeof (extensionbuiltins[0]); i++)
-{
-	if (extensionbuiltins[i].number == binum)
-	{ // but it will be defined if its actually executed.
-		if (extensionbuiltins[i].desc && !strncmp (extensionbuiltins[i].desc, "stub.", 5))
-			G_FLOAT (OFS_RETURN) = false; // pretend it won't work if it probably won't be useful
-		else if ((qcvm == &cl.qcvm && !extensionbuiltins[i].csqcfunc) || (qcvm == &sv.qcvm && !extensionbuiltins[i].ssqcfunc))
-			G_FLOAT (OFS_RETURN) = false; // works, but not in this module
-		else
-			G_FLOAT (OFS_RETURN) = true;
-		break;
-	}
-}
+				G_FLOAT (OFS_RETURN) = false; // the builtin with that number isn't defined.
+				for (i = 0; i < sizeof (extensionbuiltins) / sizeof (extensionbuiltins[0]); i++)
+				{
+					if (extensionbuiltins[i].number == binum)
+					{ // but it will be defined if its actually executed.
+						if (extensionbuiltins[i].desc && !strncmp (extensionbuiltins[i].desc, "stub.", 5))
+							G_FLOAT (OFS_RETURN) = false; // pretend it won't work if it probably won't be useful
+						else if ((qcvm == &cl.qcvm && !extensionbuiltins[i].csqcfunc) || (qcvm == &sv.qcvm && !extensionbuiltins[i].ssqcfunc))
+							G_FLOAT (OFS_RETURN) = false; // works, but not in this module
+						else
+							G_FLOAT (OFS_RETURN) = true;
+						break;
+					}
+				}
 			}
 			else
 			{
-G_FLOAT (OFS_RETURN) = true; // its defined, within the sane range, mapped, everything. all looks good.
-							 // we should probably go through the available builtins and validate that the qc's name matches what would be expected
-							 // this is really intended more for builtins defined as #0 though, in such cases, mismatched assumptions are impossible.
+				G_FLOAT (OFS_RETURN) =
+					true; // its defined, within the sane range, mapped, everything. all looks good.
+						  // we should probably go through the available builtins and validate that the qc's name matches what would be expected
+						  // this is really intended more for builtins defined as #0 though, in such cases, mismatched assumptions are impossible.
 			}
 		}
 		else
@@ -5306,26 +5307,26 @@ void PF_Fixme (void)
 			// find an extension with the matching number
 			for (i = 0; i < sizeof (extensionbuiltins) / sizeof (extensionbuiltins[0]); i++)
 			{
-int num = extensionbuiltins[i].number;
-if (num == binum)
-{ // set it up so we're faster next time
-	builtin_t bi = NULL;
-	if (qcvm == &sv.qcvm)
-		bi = extensionbuiltins[i].ssqcfunc;
-	else if (qcvm == &cl.qcvm)
-		bi = extensionbuiltins[i].csqcfunc;
-	if (!bi)
-		continue;
+				int num = extensionbuiltins[i].number;
+				if (num == binum)
+				{ // set it up so we're faster next time
+					builtin_t bi = NULL;
+					if (qcvm == &sv.qcvm)
+						bi = extensionbuiltins[i].ssqcfunc;
+					else if (qcvm == &cl.qcvm)
+						bi = extensionbuiltins[i].csqcfunc;
+					if (!bi)
+						continue;
 
-	num = extensionbuiltins[i].documentednumber;
-	if (!pr_checkextension.value || (extensionbuiltins[i].desc && !strncmp (extensionbuiltins[i].desc, "stub.", 5)))
-		Con_Warning ("Mod is using builtin #%u - %s\n", num, extensionbuiltins[i].name);
-	else
-		Con_DPrintf2 ("Mod uses builtin #%u - %s\n", num, extensionbuiltins[i].name);
-	qcvm->builtins[binum] = bi;
-	qcvm->builtins[binum]();
-	return;
-}
+					num = extensionbuiltins[i].documentednumber;
+					if (!pr_checkextension.value || (extensionbuiltins[i].desc && !strncmp (extensionbuiltins[i].desc, "stub.", 5)))
+						Con_Warning ("Mod is using builtin #%u - %s\n", num, extensionbuiltins[i].name);
+					else
+						Con_DPrintf2 ("Mod uses builtin #%u - %s\n", num, extensionbuiltins[i].name);
+					qcvm->builtins[binum] = bi;
+					qcvm->builtins[binum]();
+					return;
+				}
 			}
 
 			PR_RunError ("unimplemented builtin #%i - %s", binum, funcname);
@@ -5372,7 +5373,7 @@ void PR_AutoCvarChanged (cvar_t *var)
 		if (glob)
 		{
 			if (!ED_ParseEpair ((void *)qcvm->globals, glob, var->string, true))
-Con_Warning ("EXT: Unable to configure %s\n", n);
+				Con_Warning ("EXT: Unable to configure %s\n", n);
 		}
 		PR_SwitchQCVM (NULL);
 	}
@@ -5384,7 +5385,7 @@ Con_Warning ("EXT: Unable to configure %s\n", n);
 		if (glob)
 		{
 			if (!ED_ParseEpair ((void *)qcvm->globals, glob, var->string, true))
-Con_Warning ("EXT: Unable to configure %s\n", n);
+				Con_Warning ("EXT: Unable to configure %s\n", n);
 		}
 		PR_SwitchQCVM (NULL);
 	}
@@ -5431,7 +5432,7 @@ void PR_EnableExtensions (ddef_t *pr_globaldefs)
 		{
 			int num = (extensionbuiltins[i].documentednumber);
 			if (num && extensionbuiltins[i].csqcfunc && qcvm->builtins[num] != PF_Fixme)
-qcvm->builtins[num] = extensionbuiltins[i].csqcfunc;
+				qcvm->builtins[num] = extensionbuiltins[i].csqcfunc;
 		}
 
 		QCEXTFUNCS_GAME
@@ -5443,7 +5444,7 @@ qcvm->builtins[num] = extensionbuiltins[i].csqcfunc;
 		{
 			int num = (extensionbuiltins[i].documentednumber);
 			if (num && extensionbuiltins[i].ssqcfunc && qcvm->builtins[num] != PF_Fixme)
-qcvm->builtins[num] = extensionbuiltins[i].ssqcfunc;
+				qcvm->builtins[num] = extensionbuiltins[i].ssqcfunc;
 		}
 
 		QCEXTFUNCS_GAME
@@ -5469,11 +5470,11 @@ qcvm->builtins[num] = extensionbuiltins[i].ssqcfunc;
 			const char *name = PR_GetString (qcvm->functions[i].s_name);
 			for (j = 0; j < sizeof (extensionbuiltins) / sizeof (extensionbuiltins[0]); j++)
 			{
-if (!strcmp (extensionbuiltins[j].name, name))
-{ // okay, map it
-	qcvm->functions[i].first_statement = -extensionbuiltins[j].number;
-	break;
-}
+				if (!strcmp (extensionbuiltins[j].name, name))
+				{ // okay, map it
+					qcvm->functions[i].first_statement = -extensionbuiltins[j].number;
+					break;
+				}
 			}
 		}
 	}
@@ -5488,10 +5489,10 @@ if (!strcmp (extensionbuiltins[j].name, name))
 			cvar_t *var = Cvar_Create (n + 9, PR_UglyValueString (qcvm->globaldefs[i].type, (eval_t *)(qcvm->globals + qcvm->globaldefs[i].ofs)));
 			numautocvars++;
 			if (!var)
-continue; // name conflicts with a command?
+				continue; // name conflicts with a command?
 
 			if (!ED_ParseEpair ((void *)qcvm->globals, &pr_globaldefs[i], var->string, true))
-Con_Warning ("EXT: Unable to configure %s\n", n);
+				Con_Warning ("EXT: Unable to configure %s\n", n);
 			var->flags |= CVAR_AUTOCVAR;
 		}
 	}
@@ -5520,9 +5521,9 @@ void PR_DumpPlatform_f (void)
 		if (!strncmp (arg, "-O", 2))
 		{
 			if (arg[2])
-outname = arg + 2;
+				outname = arg + 2;
 			else
-outname = Cmd_Argv (i++);
+				outname = Cmd_Argv (i++);
 		}
 		else if (!q_strcasecmp (arg, "-Tcs"))
 			targs |= CS;
@@ -6020,37 +6021,37 @@ outname = Cmd_Argv (i++);
 		for (i = 0; i < sizeof (extensionbuiltins) / sizeof (extensionbuiltins[0]); i++)
 		{
 			if ((targs & CS) && extensionbuiltins[i].csqcfunc)
-;
+				;
 			else if ((targs & SS) && extensionbuiltins[i].ssqcfunc)
-;
+				;
 			else
-continue;
+				continue;
 
 			if (j != (extensionbuiltins[i].desc ? !strncmp (extensionbuiltins[i].desc, "stub.", 5) : 0))
-continue;
+				continue;
 			fprintf (f, "%s %s = #%i;", extensionbuiltins[i].typestr, extensionbuiltins[i].name, extensionbuiltins[i].documentednumber);
 			if (extensionbuiltins[i].desc && !j)
 			{
-const char *line = extensionbuiltins[i].desc;
-const char *term;
-fprintf (f, " /*");
-while (*line)
-{
-	fprintf (f, "\n\t\t");
-	term = line;
-	while (*term && *term != '\n')
-		term++;
-	fwrite (line, 1, term - line, f);
-	if (*term == '\n')
-	{
-		term++;
-	}
-	line = term;
-}
-fprintf (f, " */\n\n");
+				const char *line = extensionbuiltins[i].desc;
+				const char *term;
+				fprintf (f, " /*");
+				while (*line)
+				{
+					fprintf (f, "\n\t\t");
+					term = line;
+					while (*term && *term != '\n')
+						term++;
+					fwrite (line, 1, term - line, f);
+					if (*term == '\n')
+					{
+						term++;
+					}
+					line = term;
+				}
+				fprintf (f, " */\n\n");
 			}
 			else
-fprintf (f, "\n");
+				fprintf (f, "\n");
 		}
 		if (j)
 			fprintf (f, "*/\n");
