@@ -197,7 +197,7 @@ void R_DrawSpriteModel (cb_context_t *cbx, entity_t *e)
 
 	psprite = (msprite_t *)Mod_Extradata (e->model);
 	if (psprite->type == SPR_ORIENTED)
-		vkCmdSetDepthBias (cbx->cb, OFFSET_DECAL, 0.0f, 1.0f);
+		vkCmdSetDepthBias (cbx->cb, R_AdjustDepthBiasConstantFactor (OFFSET_DECAL), 0.0f, 1.0f);
 	else
 		vkCmdSetDepthBias (cbx->cb, OFFSET_NONE, 0.0f, 0.0f);
 

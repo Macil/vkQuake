@@ -256,6 +256,9 @@ typedef struct
 	qboolean						 multi_draw_indirect;
 	qboolean						 screen_effects_sops;
 
+	// Issue workaround flags
+	qboolean automatic_disable_depthbias_cf;
+
 	// Instance extensions
 	qboolean get_surface_capabilities_2;
 	qboolean get_physical_device_properties_2;
@@ -620,6 +623,8 @@ void R_DrawWorld_Water (cb_context_t *cbx, qboolean transparent);
 float GL_WaterAlphaForSurface (msurface_t *fa);
 
 int GL_MemoryTypeFromProperties (uint32_t type_bits, VkFlags requirements_mask, VkFlags preferred_mask);
+
+float R_AdjustDepthBiasConstantFactor (float constant_factor);
 
 void R_CreateDescriptorPool ();
 void R_CreateDescriptorSetLayouts ();

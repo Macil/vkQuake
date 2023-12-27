@@ -6931,6 +6931,9 @@ static void PScript_DrawParticleTypes (cb_context_t *cbx, float pframetime)
 
 			const vulkan_pipeline_t pipeline = vulkan_globals.fte_particle_pipelines[blend_mode + (draw_lines ? 8 : 0)];
 			R_BindPipeline (cbx, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+			vkCmdSetDepthBias (cbx->cb, R_AdjustDepthBiasConstantFactor (OFFSET_DECAL), 0.0f, 1.0f);
+
 			gltexture_t *tex = (tris->beflags & BEF_LINES) ? whitetexture : tris->texture;
 
 			const int		   num_indices = tris->numidx;

@@ -733,6 +733,7 @@ void R_DrawIndirectBrushes (cb_context_t *cbx, qboolean draw_water, qboolean tra
 					constant_factor = -1.f;
 					slope_factor = -0.25f;
 				}
+				constant_factor = R_AdjustDepthBiasConstantFactor (constant_factor);
 			}
 			if (last_constant_factor != constant_factor)
 			{
