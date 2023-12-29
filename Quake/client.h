@@ -121,6 +121,10 @@ typedef struct
 	qboolean demorecording;
 	qboolean demoplayback;
 
+	// is an autoplaying startup demo playing? Disables demo playback controls
+	// unless cl_startdemo_playback_controls cvar is set.
+	qboolean demoautoplaying;
+
 	// did the user pause demo playback? (separate from cl.paused because we don't
 	// want a svc_setpause inside the demo to actually pause demo playback).
 	qboolean demopaused;
@@ -321,6 +325,7 @@ extern cvar_t m_forward;
 extern cvar_t m_side;
 
 extern cvar_t cl_startdemos;
+extern cvar_t cl_startdemo_playback_controls;
 
 #define MAX_TEMP_ENTITIES 256 // johnfitz -- was 64
 
@@ -401,6 +406,7 @@ void CL_Seek_f (void);
 void CL_Stop_f (void);
 void CL_Record_f (void);
 void CL_PlayDemo_f (void);
+void CL_PlayDemo (const char *filename, qboolean is_startup_demo);
 void CL_TimeDemo_f (void);
 void CL_Resume_Record (qboolean recordsignons);
 

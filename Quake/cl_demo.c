@@ -55,6 +55,7 @@ void CL_StopPlayback (void)
 
 	fclose (cls.demofile);
 	cls.demoplayback = false;
+	cls.demoautoplaying = false;
 	cls.demoseeking = false;
 	cls.demopaused = false;
 	cls.demofile = NULL;
@@ -701,12 +702,17 @@ void CL_PlayDemo_f (void)
 	q_strlcpy (name, Cmd_Argv (1), sizeof (name));
 	COM_AddExtension (name, ".dem", sizeof (name));
 
-	Con_Printf ("Playing demo from %s.\n", name);
+	CL_PlayDemo (name, false);
+}
 
-	COM_FOpenFile (name, &cls.demofile, NULL);
+void CL_PlayDemo (const char *filename, qboolean is_startup_demo)
+{
+	Con_Printf ("Playing demo from %s.\n", filename);
+
+	COM_FOpenFile (filename, &cls.demofile, NULL);
 	if (!cls.demofile)
 	{
-		Con_Printf ("ERROR: couldn't open %s\n", name);
+		Con_Printf ("ERROR: couldn't open %s\n", filename);
 		cls.demonum = -1; // stop demo loop
 		return;
 	}
@@ -720,11 +726,12 @@ void CL_PlayDemo_f (void)
 		fclose (cls.demofile);
 		cls.demofile = NULL;
 		cls.demonum = -1; // stop demo loop
-		Con_Printf ("ERROR: demo \"%s\" is invalid\n", name);
+		Con_Printf ("ERROR: demo \"%s\" is invalid\n", filename);
 		return;
 	}
 
 	cls.demoplayback = true;
+	cls.demoautoplaying = is_startup_demo;
 	cls.demopaused = false;
 	cls.demospeed = 1.f;
 	cls.state = ca_connected;

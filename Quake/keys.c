@@ -1045,6 +1045,12 @@ void Key_EventWithKeycode (int key, qboolean down, int keycode)
 	// during demo playback, most keys bring up the main menu
 	if (cls.demoplayback && down && (consolekeys[key] || is_dpad_key) && key_dest == key_game && key != K_TAB)
 	{
+		if (cls.demoautoplaying && !cl_startdemo_playback_controls.value)
+		{
+			M_ToggleMenu_f ();
+			return;
+		}
+
 		cmd[0] = 0;
 		char *seektime = keydown[K_SHIFT] ? "30" : "10";
 
