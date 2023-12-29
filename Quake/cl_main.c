@@ -52,6 +52,7 @@ cvar_t cl_minpitch = {"cl_minpitch", "-90", CVAR_ARCHIVE_GAME}; // johnfitz -- v
 
 cvar_t cl_startdemos = {"cl_startdemos", "1", CVAR_ARCHIVE};
 cvar_t cl_startmenu = {"cl_startmenu", "1", CVAR_ARCHIVE};
+cvar_t cl_startdemo_playback_controls = {"cl_startdemo_playback_controls", "0", CVAR_ARCHIVE};
 cvar_t cl_confirmquit = {"cl_confirmquit", "0", CVAR_ARCHIVE};
 
 client_static_t cls;
@@ -191,6 +192,7 @@ void CL_Disconnect (void)
 	}
 
 	cls.demoplayback = cls.timedemo = false;
+	cls.demoautoplaying = false;
 	cls.demopaused = false;
 	cls.signon = 0;
 	cls.netcon = NULL;
@@ -317,8 +319,9 @@ void CL_NextDemo (void)
 
 	SCR_BeginLoadingPlaque ();
 
-	q_snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (str);
+	q_strlcpy (str, cls.demos[cls.demonum], sizeof (str));
+	COM_AddExtension (str, ".dem", sizeof (str));
+	CL_PlayDemo (str, true);
 	cls.demonum++;
 }
 
@@ -1401,6 +1404,7 @@ void CL_Init (void)
 
 	Cvar_RegisterVariable (&cl_startdemos);
 	Cvar_RegisterVariable (&cl_startmenu);
+	Cvar_RegisterVariable (&cl_startdemo_playback_controls);
 	Cvar_RegisterVariable (&cl_confirmquit);
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f);
