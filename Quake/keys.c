@@ -1041,9 +1041,11 @@ void Key_EventWithKeycode (int key, qboolean down, int keycode)
 		return;
 	}
 
-	qboolean is_dpad_key = key == K_DPAD_UP || key == K_DPAD_DOWN || key == K_DPAD_LEFT || key == K_DPAD_RIGHT;
-	// during demo playback, most keys bring up the main menu
-	if (cls.demoplayback && down && (consolekeys[key] || is_dpad_key) && key_dest == key_game && key != K_TAB)
+	// during demo playback, most keys bring up the main menu, including every controller key besides view/select (which works like tab).
+	qboolean is_demo_menu_key = key != K_TAB && (consolekeys[key] || key == K_DPAD_UP || key == K_DPAD_DOWN || key == K_DPAD_LEFT || key == K_DPAD_RIGHT ||
+												 key == K_ABUTTON || key == K_BBUTTON || key == K_XBUTTON || key == K_YBUTTON || key == K_LTRIGGER ||
+												 key == K_RTRIGGER || key == K_LSHOULDER || key == K_RSHOULDER || key == K_LTHUMB || key == K_RTHUMB);
+	if (cls.demoplayback && down && is_demo_menu_key && key_dest == key_game)
 	{
 		if (cls.demoautoplaying && !cl_startdemo_playback_controls.value)
 		{
