@@ -90,11 +90,16 @@ S_LoadSound
 */
 sfxcache_t *S_LoadSound (sfx_t *s)
 {
-	char		namebuffer[256];
-	byte	   *data = NULL;
-	wavinfo_t	info;
-	int			len;
-	float		stepscale;
+	char	  namebuffer[256];
+	byte	 *data = NULL;
+	wavinfo_t info;
+	int		  len;
+	float	  stepscale;
+
+	char  bnvibnamebuffer[256];
+	byte *bnvibdata = NULL;
+	int	  bnviblen = 0;
+
 	sfxcache_t *sc = NULL;
 
 	SDL_LockMutex (snd_mutex);
@@ -146,7 +151,15 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 		goto unlock_mutex;
 	}
 
-	sc = (sfxcache_t *)Mem_Alloc (len + sizeof (sfxcache_t));
+	// load the associated .bnvib (controller vibration data) file if present
+	q_strlcpy (bnvibnamebuffer, "tactile/", sizeof (bnvibnamebuffer));
+	q_strlcat (bnvibnamebuffer, s->name, sizeof (bnvibnamebuffer));
+	COM_StripExtension (bnvibnamebuffer, bnvibnamebuffer, sizeof (bnvibnamebuffer));
+	q_strlcat (bnvibnamebuffer, ".bnvib", sizeof (bnvibnamebuffer));
+
+	bnvibdata = COM_LoadFileAndGetLen (bnvibnamebuffer, NULL, &bnviblen);
+
+	sc = (sfxcache_t *)Mem_Alloc (sizeof (sfxcache_t) + len + bnviblen);
 	if (!sc)
 		goto unlock_mutex;
 	sc->length = info.samples;
@@ -158,8 +171,16 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	s->cache = sc;
 	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
 
+	if (bnvibdata)
+	{
+		sc->bnviblen = bnviblen;
+		sc->bnviboffset = len;
+		memcpy (sc->data + sc->bnviboffset, bnvibdata, bnviblen);
+	}
+
 unlock_mutex:
 	Mem_Free (data);
+	Mem_Free (bnvibdata);
 	SDL_UnlockMutex (snd_mutex);
 	return sc;
 }

@@ -491,6 +491,14 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 	target_chan->pos = 0.0;
 	target_chan->end = paintedtime + sc->length;
 
+	// Use controller vibration data
+	// TODO this `if` also needs to check that a cvar is on
+	if (sc->bnviblen && !cls.demoplayback && entnum == cl.viewentity && joy_active_controller && SDL_GameControllerHasRumble (joy_active_controller))
+	{
+		// TODO Instead of issuing a single vibration, we need to actually use the bnvib data over time and combine it with other simultaneous vibrations.
+		SDL_GameControllerRumble (joy_active_controller, 5000, 5000, 250);
+	}
+
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
 	check = &snd_channels[NUM_AMBIENTS];

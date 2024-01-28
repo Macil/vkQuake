@@ -362,6 +362,7 @@ qboolean COM_FileExists (const char *filename, unsigned int *path_id);
 void	 COM_CloseFile (int h);
 
 byte *COM_LoadFile (const char *path, unsigned int *path_id);
+byte *COM_LoadFileAndGetLen (const char *path, unsigned int *path_id, int *out_len);
 
 // Opens the given path directly, ignoring search paths.
 // Returns NULL on failure, or else a '\0'-terminated malloc'ed buffer.

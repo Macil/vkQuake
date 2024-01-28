@@ -1860,6 +1860,11 @@ Allways appends a 0 byte.
 */
 byte *COM_LoadFile (const char *path, unsigned int *path_id)
 {
+	return COM_LoadFileAndGetLen (path, path_id, NULL);
+}
+
+byte *COM_LoadFileAndGetLen (const char *path, unsigned int *path_id, int *out_len)
+{
 	int	  h;
 	byte *buf;
 	char  base[32];
@@ -1871,6 +1876,9 @@ byte *COM_LoadFile (const char *path, unsigned int *path_id)
 	len = COM_OpenFile (path, &h, path_id);
 	if (h == -1)
 		return NULL;
+
+	if (out_len)
+		*out_len = len;
 
 	// extract the filename base name for hunk tag
 	COM_FileBase (path, base, sizeof (base));
