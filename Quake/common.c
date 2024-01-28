@@ -2437,6 +2437,11 @@ Allways appends a 0 byte.
 */
 byte *COM_LoadFile (const char *path, unsigned int *path_id)
 {
+	return COM_LoadFileAndGetLen (path, path_id, NULL);
+}
+
+byte *COM_LoadFileAndGetLen (const char *path, unsigned int *path_id, int *out_len)
+{
 	int			h;
 	byte	   *buf;
 	qfilesize_t len;
@@ -2447,6 +2452,9 @@ byte *COM_LoadFile (const char *path, unsigned int *path_id)
 	len = COM_OpenFile (path, &h, path_id);
 	if (h == -1)
 		return NULL;
+
+	if (out_len)
+		*out_len = (int)len; // TODO avoid int cast
 
 	buf = (byte *)Mem_AllocNonZero (len + 1);
 
