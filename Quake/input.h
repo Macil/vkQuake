@@ -55,4 +55,6 @@ void IN_Deactivate (qboolean free_cursor);
 // called when switching to fullscreen while in menu or console
 void IN_HideCursor ();
 
+extern SDL_GameController *joy_active_controller;
+
 #endif /* _QUAKE_INPUT_H */

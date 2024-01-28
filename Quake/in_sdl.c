@@ -41,8 +41,10 @@ cvar_t joy_exponent_move = {"joy_exponent_move", "2", CVAR_ARCHIVE};
 cvar_t joy_swapmovelook = {"joy_swapmovelook", "0", CVAR_ARCHIVE};
 cvar_t joy_enable = {"joy_enable", "1", CVAR_ARCHIVE};
 
-static SDL_JoystickID	   joy_active_instaceid = -1;
-static SDL_GameController *joy_active_controller = NULL;
+static SDL_JoystickID joy_active_instaceid = -1;
+
+// TODO need to null this out whenever keyboard/mouse are the last used device
+SDL_GameController *joy_active_controller = NULL;
 
 static qboolean no_mouse = false;
 
