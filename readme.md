@@ -1,10 +1,7 @@
-My own personnal fork of vkQuake, with chosen cherry-picks of the other Quakespasm derivatives.
-
-[![Windows CI](https://github.com/vsonnier/vkQuake/actions/workflows/build-windows.yml/badge.svg)](https://github.com/vsonnier/vkQuake/actions/workflows/build-windows.yml) [![Windows CI](https://github.com/vsonnier/vkQuake/actions/workflows/build-mingw.yml/badge.svg)](https://github.com/vsonnier/vkQuake/actions/workflows/build-mingw.yml) [![Linux CI](https://github.com/vsonnier/vkQuake/actions/workflows/build-linux.yml/badge.svg)](https://github.com/vsonnier/vkQuake/actions/workflows/build-linux.yml) [![macOS CI](https://github.com/vsonnier/vkQuake/actions/workflows/build-mac.yml/badge.svg)](https://github.com/vsonnier/vkQuake/actions/workflows/build-mac.yml) [![Formatting](https://github.com/vsonnier/vkQuake/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/vsonnier/vkQuake/actions/workflows/clang-format-check.yml)
-
-----------------------------------------------------------
+This is Macil's fork of vkQuake. It has some patches backported from QuakeSpasm and IronWail, and some changes by myself mainly for better controller and Steam Deck support.
 
 # 🌋 vkQuake
+[![Windows CI](https://github.com/Macil/vkQuake/actions/workflows/build-windows.yml/badge.svg)](https://github.com/Macil/vkQuake/actions/workflows/build-windows.yml) [![Windows CI](https://github.com/Macil/vkQuake/actions/workflows/build-mingw.yml/badge.svg)](https://github.com/Macil/vkQuake/actions/workflows/build-mingw.yml) [![Linux CI](https://github.com/Macil/vkQuake/actions/workflows/build-linux.yml/badge.svg)](https://github.com/Macil/vkQuake/actions/workflows/build-linux.yml) [![macOS CI](https://github.com/Macil/vkQuake/actions/workflows/build-mac.yml/badge.svg)](https://github.com/Macil/vkQuake/actions/workflows/build-mac.yml) [![Formatting](https://github.com/Macil/vkQuake/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/Macil/vkQuake/actions/workflows/clang-format-check.yml)
 
 vkQuake is a port of id Software's [Quake](https://en.wikipedia.org/wiki/Quake_(video_game)) using Vulkan instead of OpenGL for rendering. It is based on the popular [QuakeSpasm](http://quakespasm.sourceforge.net/) and [QuakeSpasm-Spiked](https://triptohell.info/moodles/qss/) ports and runs all mods compatible with QuakeSpasm like [Arcane Dimensions](http://www.moddb.com/mods/arcane-dimensions). 
 
@@ -59,7 +56,7 @@ vkQuake shows basic usage of the API. For example it demonstrates render passes 
 
 ## Windows
 
-Clone the vkQuake repo from `https://github.com/vsonnier/vkQuake.git`
+Clone the vkQuake repo from `https://github.com/Macil/vkQuake.git`
 
 Prerequisites:
 
@@ -93,7 +90,7 @@ pacman -S git meson flac glibc libgl libmad libvorbis libx11 sdl2 vulkan-headers
 Then clone the vkQuake repo:
 
 ~~~
-git clone https://github.com/vsonnier/vkQuake.git
+git clone https://github.com/Macil/vkQuake.git
 ~~~
 
 Now go to the Quake directory and compile the executable:
@@ -125,7 +122,7 @@ brew install molten-vk vulkan-headers glslang spirv-tools sdl2 libvorbis flac op
 Then clone the vkQuake repo:
 
 ~~~
-git clone https://github.com/vsonnier/vkQuake.git
+git clone https://github.com/Macil/vkQuake.git
 ~~~
 
 Now go to the Quake directory and compile the executable:
