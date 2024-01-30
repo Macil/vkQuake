@@ -83,6 +83,47 @@ static void ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte *data)
 
 //=============================================================================
 
+byte *LoadBnvibFile (const char *path, unsigned int *path_id, int *out_len)
+{
+	byte *data = COM_LoadFileAndGetLen (path, path_id, out_len);
+	if (!data)
+	{
+		// Special-case a few lookups so weapons in some popular mods have vibration data.
+		// TODO check these replacements all make sense after actual bnvib playback is implemented.
+
+		// Arcane Dimensions axe
+		if (!q_strcasecmp (path, "tactile/weapons/axe_swoosh1.bnvib") || !q_strcasecmp (path, "tactile/weapons/axe_swoosh2.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/weapons/ax1.bnvib", path_id, out_len);
+		}
+		if (!q_strcasecmp (path, "tactile/weapons/axe_flesh.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/player/axhit1.bnvib", path_id, out_len);
+		}
+		if (!q_strcasecmp (path, "tactile/weapons/axe_wood.bnvib") || !q_strcasecmp (path, "tactile/weapons/axe_glass.bnvib") ||
+			!q_strcasecmp (path, "tactile/weapons/axe_metal.bnvib") || !q_strcasecmp (path, "tactile/weapons/axe_ceramic.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/player/axhit2.bnvib", path_id, out_len);
+		}
+		// Arcane Dimensions shotgun
+		if (!q_strcasecmp (path, "tactile/weapons/sg1.bnvib") || !q_strcasecmp (path, "tactile/weapons/sg2.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/weapons/guncock.bnvib", path_id, out_len);
+		}
+		// Arcane Dimensions super shotgun
+		if (!q_strcasecmp (path, "tactile/weapons/ssg1.bnvib") || !q_strcasecmp (path, "tactile/weapons/ssg2.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/weapons/shotgn2.bnvib", path_id, out_len);
+		}
+		// Arcane Dimensions plasma gun
+		if (!q_strcasecmp (path, "tactile/weapons/plasma_fire.bnvib"))
+		{
+			return COM_LoadFileAndGetLen ("tactile/weapons/spike2.bnvib", path_id, out_len);
+		}
+	}
+	return data;
+}
+
 /*
 ==============
 S_LoadSound
@@ -157,7 +198,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	COM_StripExtension (bnvibnamebuffer, bnvibnamebuffer, sizeof (bnvibnamebuffer));
 	q_strlcat (bnvibnamebuffer, ".bnvib", sizeof (bnvibnamebuffer));
 
-	bnvibdata = COM_LoadFileAndGetLen (bnvibnamebuffer, NULL, &bnviblen);
+	bnvibdata = LoadBnvibFile (bnvibnamebuffer, NULL, &bnviblen);
 
 	sc = (sfxcache_t *)Mem_Alloc (sizeof (sfxcache_t) + len + bnviblen);
 	if (!sc)
