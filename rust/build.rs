@@ -2,6 +2,9 @@ use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
+// using rust-bindgen is a pain. TODO consider not using it and making the rust
+// library more isolated.
+
 fn compute_include_paths() -> Vec<String> {
     let mut include_paths: Vec<String> = vec![];
 
