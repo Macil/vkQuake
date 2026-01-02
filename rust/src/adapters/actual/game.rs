@@ -5,7 +5,7 @@ use super::raw_bindings::{
 use crate::adapters::common::Gametype;
 use crate::tracing_init;
 use once_cell::sync::Lazy;
-use std::cell::RefCell;
+use std::cell::{RefCell, UnsafeCell};
 use std::convert::{TryFrom, TryInto};
 use std::ffi::CString;
 use std::num::TryFromIntError;
@@ -16,12 +16,20 @@ use tokio::sync::oneshot;
 
 type HostFrameCallback = Box<dyn FnOnce(&mut SvGame) + Send + 'static>;
 
-static mut HOST_FRAME_QUEUE: Lazy<(
+/// Wrapper to allow a value to be stored in a static and accessed from a single thread.
+/// Safety: The caller must ensure that the value is only accessed from a single thread.
+struct SingleThreadCell<T>(UnsafeCell<T>);
+unsafe impl<T> Sync for SingleThreadCell<T> {}
+
+static HOST_FRAME_QUEUE: Lazy<(
     mpsc::Sender<HostFrameCallback>,
-    mpsc::Receiver<HostFrameCallback>,
-)> = Lazy::new(|| mpsc::channel(200));
+    SingleThreadCell<mpsc::Receiver<HostFrameCallback>>,
+)> = Lazy::new(|| {
+    let (tx, rx) = mpsc::channel(200);
+    (tx, SingleThreadCell(UnsafeCell::new(rx)))
+});
 static HOST_FRAME_QUEUE_TX: Lazy<&mpsc::Sender<HostFrameCallback>> =
-    Lazy::new(|| unsafe { &HOST_FRAME_QUEUE.0 });
+    Lazy::new(|| &HOST_FRAME_QUEUE.0);
 
 thread_local! {
     static REDIRECTED_CONSOLE_OUTPUT: RefCell<Vec<String>> = RefCell::default();
@@ -33,7 +41,8 @@ pub unsafe extern "C" fn Rust_Frame() {
         game: Game { _field: () },
         _field: (),
     };
-    let rx = unsafe { &mut HOST_FRAME_QUEUE.1 };
+    // Safety: Rust_Frame is only called from the main game thread.
+    let rx = unsafe { &mut *HOST_FRAME_QUEUE.1 .0.get() };
     loop {
         match rx.try_recv() {
             Ok(f) => f(&mut sv_game),
@@ -56,6 +65,7 @@ impl Game {
 }
 
 pub struct SvGame {
+    #[allow(dead_code)]
     pub game: Game,
     // Require that SvGame is only instantiated within this module.
     _field: (),

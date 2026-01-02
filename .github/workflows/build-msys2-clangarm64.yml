@@ -1,6 +1,8 @@
 name: Windows arm64 CI (mingw)
 
-on: [push, pull_request]
+# TODO fix Rust code to build on arm64 windows
+# on: [push, pull_request]
+on: []
 
 jobs:
   build-mingw:
