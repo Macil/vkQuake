@@ -3,7 +3,7 @@
 use super::{
     game::{Game, GameInit},
     raw_bindings::{
-        cvar_t, CFG_CloseConfig, CFG_OpenConfig, CFG_ReadCvars, Cvar_FindVar,
+        cvar_t, cvarflags_t, CFG_CloseConfig, CFG_OpenConfig, CFG_ReadCvars, Cvar_FindVar,
         Cvar_RegisterVariable, Cvar_SetQuick, Cvar_SetValueQuick,
     },
 };
@@ -29,7 +29,7 @@ impl Cvar {
         let cvar = Box::leak(Box::new(cvar_t {
             name: name.as_ptr(),
             string: default.as_ptr(),
-            flags: flags.bits(),
+            flags: flags.bits() as cvarflags_t,
             value: 0.0,
             default_string: std::ptr::null(),
             callback: None,

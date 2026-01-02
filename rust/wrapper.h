@@ -4,6 +4,9 @@
 #define __XMMINTRIN_H
 #define __EMMINTRIN_H
 #define __PMMINTRIN_H
+#define __FMA4INTRIN_H
+#define __AMMINTRIN_H
+#define __XOPINTRIN_H
 #define SDL_cpuinfo_h_
 #include <mmintrin.h>
 #endif

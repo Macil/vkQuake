@@ -1,12 +1,9 @@
 [advisories]
 # relying on cargo audit in CI for advisories instead
-vulnerability = "warn"
-unmaintained = "warn"
-notice = "deny"
+unmaintained = "workspace"
 ignore = []
 
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "ISC",
@@ -14,10 +11,8 @@ allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
     "BSL-1.0",
-    "Unicode-DFS-2016",
+    "Unicode-3.0",
 ]
-copyleft = "warn"
-allow-osi-fsf-free = "neither"
 exceptions = []
 
 [bans]
