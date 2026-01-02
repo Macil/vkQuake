@@ -1,5 +1,3 @@
-#![deny(unsafe_op_in_unsafe_fn)]
-
 mod adapters;
 mod axum_helpers;
 mod db;
