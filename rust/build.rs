@@ -8,8 +8,12 @@ use std::path::PathBuf;
 fn compute_include_paths() -> Vec<String> {
     let mut include_paths: Vec<String> = vec![];
 
-    if let Ok(include_path) = env::var("SDL2_INCLUDE_PATH") {
+    if let Ok(include_path) = env::var("SDL3_INCLUDE_PATH") {
         include_paths.push(include_path);
+    };
+
+    if let Ok(vulkan_sdk) = env::var("VULKAN_SDK") {
+        include_paths.push(vulkan_sdk + "/include");
     };
 
     if cfg!(target_os = "macos") {
@@ -17,12 +21,12 @@ fn compute_include_paths() -> Vec<String> {
     }
 
     if cfg!(target_os = "windows") {
-        include_paths.push("../Windows/SDL2/include".to_string());
+        include_paths.push("../Windows/SDL3/include".to_string());
         include_paths.push("../Windows/misc/include".to_string());
     } else {
         let pkg_config_library = pkg_config::Config::new()
             .print_system_libs(false)
-            .probe("sdl2")
+            .probe("sdl3")
             .unwrap();
         for path in pkg_config_library.include_paths {
             include_paths.push(path.to_string_lossy().to_string());
@@ -51,11 +55,11 @@ fn run_bindgen() {
             let mut extra_paths_to_check = Vec::new();
 
             if cfg!(target_arch = "x86_64") {
-                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin");
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\Llvm\\x64\\bin");
             } else if cfg!(target_arch = "x86") {
-                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin");
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\Llvm\\bin");
             } else if cfg!(target_arch = "aarch64") {
-                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\ARM64\\bin");
+                extra_paths_to_check.push("C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\Llvm\\ARM64\\bin");
             }
 
             let libclang_path = path.split(';').chain(extra_paths_to_check).find(|path| {
