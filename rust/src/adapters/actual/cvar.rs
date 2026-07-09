@@ -33,6 +33,7 @@ impl Cvar {
             value: 0.0,
             default_string: std::ptr::null(),
             callback: None,
+            completion: None,
             next: std::ptr::null_mut(),
         }));
         unsafe {

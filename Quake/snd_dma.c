@@ -28,6 +28,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "snd_codec.h"
 #include "bgmusic.h"
 
+#ifdef USE_SDL3
+#include <SDL3/SDL_properties.h>
+#include <SDL3/SDL_gamepad.h>
+#include "in_sdl.h"
+#endif
+
 static void S_Play (void);
 static void S_PlayVol (void);
 static void S_SoundList (void);
@@ -490,13 +496,20 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 	target_chan->pos = 0.0;
 	target_chan->end = paintedtime + sc->length;
 
+#ifdef USE_SDL3
 	// Use controller vibration data
 	// TODO this `if` also needs to check that a cvar is on
-	if (sc->bnviblen && !cls.demoplayback && entnum == cl.viewentity && joy_active_controller && SDL_GameControllerHasRumble (joy_active_controller))
+	if (sc->bnviblen && !cls.demoplayback && entnum == cl.viewentity && joy_active_controller)
 	{
-		// TODO Instead of issuing a single vibration, we need to actually use the bnvib data over time and combine it with other simultaneous vibrations.
-		SDL_GameControllerRumble (joy_active_controller, 5000, 5000, 250);
+		SDL_PropertiesID props = SDL_GetGamepadProperties (joy_active_controller);
+		bool			 has_rumble = SDL_GetBooleanProperty (props, SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false);
+		if (has_rumble)
+		{
+			// TODO Instead of issuing a single vibration, we need to actually use the bnvib data over time and combine it with other simultaneous vibrations.
+			SDL_RumbleGamepad (joy_active_controller, 5000, 5000, 250);
+		}
 	}
+#endif
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder

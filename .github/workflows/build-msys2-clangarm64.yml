@@ -1,11 +1,12 @@
 name: Windows arm64 CI (mingw)
 
-# TODO fix Rust code to build on arm64 windows
-# on: [push, pull_request]
-on: []
+on: [push, pull_request]
 
 jobs:
   build-mingw:
+    # TODO fix Rust code to build on arm64 windows and re-enable this
+    if: false
+
     name: ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
     permissions:
