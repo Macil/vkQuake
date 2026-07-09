@@ -13,7 +13,7 @@ RUN apt-get update \
 	build-essential \
 	cmake \
 	curl \
-	clang-10 \
+	clang-15 \
 	file \
 	fuse \
 	ninja-build \
