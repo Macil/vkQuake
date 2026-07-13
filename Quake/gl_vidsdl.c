@@ -3940,8 +3940,7 @@ static void GL_EndRenderingTask (end_rendering_parms_t *parms)
 	// cap the number of frames queued for display: DXGI layered swapchains force 3+ images, so
 	// under FIFO the acquire alone lets the CPU run several vblanks ahead of scan out
 	const uint64_t max_frame_latency = (uint64_t)CLAMP (1, (int)vid_maxframelatency.value, 8);
-	if (swapchain_present_wait && parms->swapchain && (vid_maxframelatency.value > 0) && (vid_vsync.value > 0) &&
-		(current_present_id + 1 > max_frame_latency))
+	if (swapchain_present_wait && parms->swapchain && (vid_maxframelatency.value > 0) && (vid_vsync.value > 0) && (current_present_id + 1 > max_frame_latency))
 	{
 		ZEROED_STRUCT (VkPresentWait2InfoKHR, present_wait_2_info);
 		present_wait_2_info.sType = VK_STRUCTURE_TYPE_PRESENT_WAIT_2_INFO_KHR;
