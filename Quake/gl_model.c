@@ -610,9 +610,28 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 			md5_enhanced_path_id = 0; // file not found
 
 		// this is a replacement only if its priority is >= MDL one, else discard it
-		if (md5_enhanced_path_id < mod->path_id)
+		if (md5_enhanced_path_id && md5_enhanced_path_id < mod->path_id)
 		{
-			md5_enhanced_path_id = 0;
+			// Exception: rogue (Dissolution of Eternity) provides .mdl models that match the base game
+			// ones except they have extra skins added, so the remastered id1 MD5 models should still be used
+			// with them for the original skins. (When the extra skins not present in the MD5 models are used,
+			// rendering will fall back to the MDL). This workaround is intentionally limited to the rogue
+			// gamedir and MD5 replacements only.
+			qboolean keep_md5 = false;
+			if (rogue)
+			{
+				for (searchpath_t *path = com_searchpaths; path; path = path->next)
+				{
+					if (path->path_id == mod->path_id)
+					{
+						if (!q_strcasecmp (path->dir, "rogue"))
+							keep_md5 = true;
+						break;
+					}
+				}
+			}
+			if (!keep_md5)
+				md5_enhanced_path_id = 0;
 		}
 	}
 
