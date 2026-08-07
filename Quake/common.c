@@ -3690,26 +3690,12 @@ void LOC_LoadFile (const char *file)
 	Con_Printf ("\nLanguage initialization\n");
 
 	memset (&archive, 0, sizeof (archive));
-	q_snprintf (path, sizeof (path), "%s/%s", com_basedir, file);
-#ifdef USE_SDL3
-	rw = SDL_IOFromFile (path, "rb");
-#else
-	rw = SDL_RWFromFile (path, "rb");
-#endif
-#if defined(DO_USERDIRS)
-	if (!rw)
+
+	localization.text = (char *)COM_LoadFile (file, NULL);
+
+	if (!localization.text)
 	{
-		q_snprintf (path, sizeof (path), "%s/%s", host_parms->userdir, file);
-#ifdef USE_SDL3
-		rw = SDL_IOFromFile (path, "rb");
-#else
-		rw = SDL_RWFromFile (path, "rb");
-#endif
-	}
-#endif
-	if (!rw)
-	{
-		q_snprintf (path, sizeof (path), "%s/QuakeEX.kpf", com_basedir);
+		q_snprintf (path, sizeof (path), "%s/%s", com_basedir, file);
 #ifdef USE_SDL3
 		rw = SDL_IOFromFile (path, "rb");
 #else
@@ -3718,7 +3704,7 @@ void LOC_LoadFile (const char *file)
 #if defined(DO_USERDIRS)
 		if (!rw)
 		{
-			q_snprintf (path, sizeof (path), "%s/QuakeEX.kpf", host_parms->userdir);
+			q_snprintf (path, sizeof (path), "%s/%s", host_parms->userdir, file);
 #ifdef USE_SDL3
 			rw = SDL_IOFromFile (path, "rb");
 #else
@@ -3727,60 +3713,80 @@ void LOC_LoadFile (const char *file)
 		}
 #endif
 		if (!rw)
-			goto fail;
-#ifdef USE_SDL3
-		sz = SDL_GetIOSize (rw);
-#else
-		sz = SDL_RWsize (rw);
-#endif
-		if (sz <= 0)
-			goto fail;
-		archive.m_pRead = mz_zip_file_read_func;
-		archive.m_pIO_opaque = rw;
-		if (!mz_zip_reader_init (&archive, sz, 0))
-			goto fail;
-		localization.text = (char *)mz_zip_reader_extract_file_to_heap (&archive, file, &size, 0);
-		if (!localization.text)
-			goto fail;
-		mz_zip_reader_end (&archive);
-#ifdef USE_SDL3
-		SDL_CloseIO (rw);
-#else
-		SDL_RWclose (rw);
-#endif
-		localization.text = (char *)Mem_Realloc (localization.text, size + 1);
-		localization.text[size] = 0;
-	}
-	else
-	{
-#ifdef USE_SDL3
-		sz = SDL_GetIOSize (rw);
-#else
-		sz = SDL_RWsize (rw);
-#endif
-		if (sz <= 0)
-			goto fail;
-		localization.text = (char *)Mem_Alloc (sz + 1);
-		if (!localization.text)
 		{
-		fail:
+			q_snprintf (path, sizeof (path), "%s/QuakeEX.kpf", com_basedir);
+#ifdef USE_SDL3
+			rw = SDL_IOFromFile (path, "rb");
+#else
+			rw = SDL_RWFromFile (path, "rb");
+#endif
+#if defined(DO_USERDIRS)
+			if (!rw)
+			{
+				q_snprintf (path, sizeof (path), "%s/QuakeEX.kpf", host_parms->userdir);
+#ifdef USE_SDL3
+				rw = SDL_IOFromFile (path, "rb");
+#else
+				rw = SDL_RWFromFile (path, "rb");
+#endif
+			}
+#endif
+			if (!rw)
+				goto fail;
+#ifdef USE_SDL3
+			sz = SDL_GetIOSize (rw);
+#else
+			sz = SDL_RWsize (rw);
+#endif
+			if (sz <= 0)
+				goto fail;
+			archive.m_pRead = mz_zip_file_read_func;
+			archive.m_pIO_opaque = rw;
+			if (!mz_zip_reader_init (&archive, sz, 0))
+				goto fail;
+			localization.text = (char *)mz_zip_reader_extract_file_to_heap (&archive, file, &size, 0);
+			if (!localization.text)
+				goto fail;
 			mz_zip_reader_end (&archive);
-			if (rw)
 #ifdef USE_SDL3
-				SDL_CloseIO (rw);
+			SDL_CloseIO (rw);
 #else
-				SDL_RWclose (rw);
+			SDL_RWclose (rw);
 #endif
-			Con_Printf ("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
-			return;
+			localization.text = (char *)Mem_Realloc (localization.text, size + 1);
+			localization.text[size] = 0;
 		}
+		else
+		{
 #ifdef USE_SDL3
-		SDL_ReadIO (rw, localization.text, sz);
-		SDL_CloseIO (rw);
+			sz = SDL_GetIOSize (rw);
 #else
-		SDL_RWread (rw, localization.text, 1, sz);
-		SDL_RWclose (rw);
+			sz = SDL_RWsize (rw);
 #endif
+			if (sz <= 0)
+				goto fail;
+			localization.text = (char *)Mem_Alloc (sz + 1);
+			if (!localization.text)
+			{
+			fail:
+				mz_zip_reader_end (&archive);
+				if (rw)
+#ifdef USE_SDL3
+					SDL_CloseIO (rw);
+#else
+					SDL_RWclose (rw);
+#endif
+				Con_Printf ("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
+				return;
+			}
+#ifdef USE_SDL3
+			SDL_ReadIO (rw, localization.text, sz);
+			SDL_CloseIO (rw);
+#else
+			SDL_RWread (rw, localization.text, 1, sz);
+			SDL_RWclose (rw);
+#endif
+		}
 	}
 
 	cursor = localization.text;
