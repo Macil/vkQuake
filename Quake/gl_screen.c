@@ -177,7 +177,36 @@ for a few moments
 */
 void SCR_CenterPrint (const char *str) // update centerprint data
 {
-	strncpy (scr_centerstring, str, sizeof (scr_centerstring) - 1);
+	// word-wrap long lines (dawn of the machine relies on this)
+	const int WRAP_WIDTH = 40;
+	size_t	  len = 0;
+	int		  linechars = 0;
+	int		  lastspace = -1;
+
+	while (*str && len < sizeof (scr_centerstring) - 1)
+	{
+		scr_centerstring[len] = *str;
+		if (*str == '\n')
+		{
+			linechars = 0;
+			lastspace = -1;
+		}
+		else
+		{
+			if (*str == ' ')
+				lastspace = (int)len;
+			if (++linechars > WRAP_WIDTH && lastspace >= 0)
+			{
+				scr_centerstring[lastspace] = '\n';
+				linechars = (int)(len - lastspace);
+				lastspace = -1;
+			}
+		}
+		len++;
+		str++;
+	}
+	scr_centerstring[len] = 0;
+
 	scr_centertime_off = cl.time + scr_centertime.value;
 	scr_centertime_start = cl.time;
 
