@@ -4467,7 +4467,8 @@ jointinfo_s
 */
 typedef struct jointinfo_s
 {
-	ssize_t		parent; //-1 for a root joint
+	// no parent here: the hierarchy that matters is the md5anim's, which is what its
+	// pose data is relative to, and a mesh may differ (see MD5Anim_Load)
 	char		name[32];
 	jointpose_t inverse;
 } jointinfo_t;
@@ -4555,6 +4556,84 @@ static void Matrix3x4_Invert_Simple (const float *in1, float *out)
 
 	for (int i = 0; i < 12; ++i)
 		out[i] = (float)temp[i];
+}
+
+/*
+================
+MD5_FixJointTranslationScale
+
+The joint block is a bind pose and the weights are joint-local, so the two have to
+agree: every joint influencing a vertex must place it in the same spot. mg3's
+progs/ogre_rocket.md5mesh does not -- its exporter wrote the joint translations 100x
+larger than the space the weights are in. A CPU skinner evaluating
+sum(w * anim_abs * local) never uses the bind pose and so never notices, but we bake
+each vertex down to the one bind-pose position the GPU skins from, and that bake is
+meaningless unless the bind pose is self-consistent.
+
+So recover the uniform scale s on the joint translations that makes it so. For two
+influences a and b on one vertex, agreement means
+
+	R_a * local_a + s * T_a  ==  R_b * local_b + s * T_b,  i.e.  da + s * db == 0
+	where db = T_a - T_b and da = (bind_a * local_a - bind_b * local_b) - db
+
+which is linear in s, so least squares over every pair is two accumulators. A
+well-formed md5mesh satisfies it exactly at s = 1, so this is a no-op on models that
+do not need it (measured 1.000000 on id1's ogre and mg3's other four md5 models).
+================
+*/
+static void MD5_FixJointTranslationScale (
+	const char *fname, jointpose_t *joint_poses, size_t numjoints, const md5vertinfo_t *vinfo, const md5weightinfo_t *weight, size_t numverts,
+	size_t numweights)
+{
+	double num = 0.0, den = 0.0;
+	float  scale;
+
+	for (size_t v = 0; v < numverts; v++)
+	{
+		const size_t first = vinfo[v].firstweight;
+
+		if (first + vinfo[v].count > numweights)
+			continue; // out of bounds; MD5_BakeInfluences reports that
+
+		for (size_t i = 0; i + 1 < vinfo[v].count; i++)
+		{
+			const md5weightinfo_t *a = &weight[first + i], *b = &weight[first + i + 1];
+			vec3_t				   pa, pb, da, db;
+
+			if (a->pos[3] <= 0 || b->pos[3] <= 0)
+				continue; // a zero-weight influence says nothing about where the vertex is
+
+			// where each joint puts the vertex (pos is premultiplied by the influence)
+			Matrix3x4_RM_Transform4 (joint_poses[a->joint_index].mat, a->pos, pa);
+			Matrix3x4_RM_Transform4 (joint_poses[b->joint_index].mat, b->pos, pb);
+			VectorScale (pa, 1.0f / a->pos[3], pa);
+			VectorScale (pb, 1.0f / b->pos[3], pb);
+
+			for (int k = 0; k < 3; k++)
+			{
+				db[k] = joint_poses[a->joint_index].mat[k * 4 + 3] - joint_poses[b->joint_index].mat[k * 4 + 3];
+				da[k] = pa[k] - pb[k] - db[k];
+			}
+			num += DotProduct (da, db);
+			den += DotProduct (db, db);
+		}
+	}
+
+	if (den <= 0.0)
+		return; // no multi-influence vertex, or every joint sits at the same place
+	scale = (float)(-num / den);
+
+	// leave well-formed models strictly alone, and do not trust a nonsensical fit
+	if (scale <= 0.0f || fabsf (scale - 1.0f) < 0.001f)
+		return;
+
+	Con_DWarning ("MD5: %s has joint translations %g x the scale of its weights, correcting\n", fname, 1.0f / scale);
+	for (size_t j = 0; j < numjoints; j++)
+	{
+		joint_poses[j].mat[3] *= scale;
+		joint_poses[j].mat[7] *= scale;
+		joint_poses[j].mat[11] *= scale;
+	}
 }
 
 /*
@@ -4736,6 +4815,7 @@ typedef struct md5animctx_s
 	size_t		 numposes;
 	size_t		 numjoints;
 	jointpose_t *posedata;
+	ssize_t		*parents; // the anim's own hierarchy, which is what its pose data is relative to
 } md5animctx_t;
 
 /*
@@ -4800,13 +4880,20 @@ static void MD5Anim_Load (md5animctx_t *ctx, jointinfo_t *joints, size_t numjoin
 	MD5EXPECT ("numAnimatedComponents");
 	rawcount = MD5UINT ();
 
-	if (ctx->numjoints != numjoints)
+	// The anim only has to drive the mesh's leading joints: exporters routinely leave
+	// leaf/helper bones out of the anim (mg3's ogre_rocket.md5mesh has 55 joints against
+	// the 39 in the ogre.md5anim it reuses -- the extra ones are "_end" tip bones plus
+	// the armature object itself, none of which carry any weights). Whatever the anim
+	// does not mention is left at its bind pose. An anim with more joints than the mesh
+	// is genuinely mismatched, though.
+	if (ctx->numjoints > numjoints)
 		Sys_Error ("%s has incorrect joint count", fname);
 
 	raw = Mem_Alloc (sizeof (*raw) * (rawcount + 6));
 	ab = Mem_Alloc (sizeof (*ab) * ctx->numjoints);
 
 	ctx->posedata = outposes = Mem_Alloc (sizeof (*outposes) * ctx->numjoints * ctx->numposes);
+	ctx->parents = Mem_Alloc (sizeof (*ctx->parents) * ctx->numjoints);
 
 	MD5EXPECT ("hierarchy");
 	MD5EXPECT ("{");
@@ -4816,8 +4903,13 @@ static void MD5Anim_Load (md5animctx_t *ctx, jointinfo_t *joints, size_t numjoin
 		if (strcmp (joints[j].name, com_token))
 			Sys_Error ("%s: joint was renamed", fname);
 		buffer = COM_Parse (buffer);
-		if (joints[j].parent != MD5SINT ())
-			Sys_Error ("%s: joint has wrong parent", fname);
+		// Take the hierarchy from the anim rather than checking it against the mesh's:
+		// the pose data below is relative to *this* hierarchy, and a mesh is free to
+		// hang it off extra joints of its own (mg3 parents the ogre's Root to an
+		// "ogre_MD5_Armature", where the anim says it has no parent at all).
+		ctx->parents[j] = MD5SINT ();
+		if (ctx->parents[j] < -1 || ctx->parents[j] >= (ssize_t)j)
+			Sys_Error ("%s: joint has bad parent", fname); // parents must precede their children
 		// new info
 		ab[j].flags = MD5UINT ();
 		if (ab[j].flags & ~63)
@@ -4903,6 +4995,41 @@ static void MD5Anim_Load (md5animctx_t *ctx, jointinfo_t *joints, size_t numjoin
 	Mem_Free (raw);
 	Mem_Free (ab);
 	Mem_Free (ctx->animfile);
+}
+
+/*
+================
+MD5Anim_BuildPalette
+Fold each pose into the inverse bind pose, giving the skinning matrices the GPU
+indexes. That palette is in mesh joint space, since that is what the weights
+reference, so it is numjoints wide; any trailing joint the anim does not drive keeps
+an identity matrix, leaving whatever is weighted to it at its bind pose.
+Consumes ctx->posedata and ctx->parents.
+================
+*/
+static void MD5Anim_BuildPalette (md5animctx_t *ctx, const jointinfo_t *joints, size_t numjoints, jointpose_t *out, jointpose_t *concat_joints)
+{
+	static const jointpose_t identity_pose = {{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}};
+
+	for (size_t pose_index = 0; pose_index < ctx->numposes; ++pose_index)
+	{
+		const jointpose_t *in_pose = ctx->posedata + (pose_index * ctx->numjoints);
+		jointpose_t		  *out_pose = out + (pose_index * numjoints);
+		for (size_t j = ctx->numjoints; j < numjoints; ++j)
+			out_pose[j] = identity_pose;
+		for (size_t j = 0; j < ctx->numjoints; ++j)
+		{
+			// concat it onto the parent (relative->abs)
+			if (ctx->parents[j] < 0)
+				memcpy (concat_joints[j].mat, in_pose[j].mat, sizeof (jointpose_t));
+			else
+				R_ConcatTransforms ((void *)concat_joints[ctx->parents[j]].mat, (void *)in_pose[j].mat, (void *)concat_joints[j].mat);
+			// and finally invert it
+			R_ConcatTransforms ((void *)concat_joints[j].mat, (void *)joints[j].inverse.mat, (void *)out_pose[j].mat);
+		}
+	}
+	Mem_Free (ctx->posedata);
+	Mem_Free (ctx->parents);
 }
 
 /*
@@ -5190,9 +5317,7 @@ static void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 		vec4_t		  quat;
 		q_strlcpy (joint_infos[j].name, com_token, sizeof (joint_infos[j].name));
 		buffer = COM_Parse (buffer);
-		joint_infos[j].parent = MD5SINT ();
-		if (joint_infos[j].parent < -1 && joint_infos[j].parent >= (ssize_t)numjoints)
-			Sys_Error ("joint index out of bounds");
+		MD5SINT (); // parent, unused: see jointinfo_s
 		MD5EXPECT ("(");
 		pos[0] = MD5FLOAT ();
 		pos[1] = MD5FLOAT ();
@@ -5209,7 +5334,8 @@ static void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 		MD5EXPECT (")");
 
 		GenMatrixPosQuat4Scale (pos, quat, scale, joint_poses[j].mat);
-		Matrix3x4_Invert_Simple (joint_poses[j].mat, joint_infos[j].inverse.mat); // absolute, so we can just invert now.
+		// the inverses cannot be taken yet: MD5_FixJointTranslationScale may still have
+		// to correct the bind pose, and it needs the weights to do that.
 	}
 
 	if (strcmp (com_token, "}"))
@@ -5218,25 +5344,11 @@ static void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 	buffer = COM_Parse (buffer);
 
 	// 2. Compute inverted joints:
-	TEMP_ALLOC_ZEROED (jointpose_t, inverted_joints, anim.numjoints * anim.numposes);
+	// the palette the GPU indexes is in mesh joint space, since that is what the weights
+	// reference, so it is numjoints wide. filling it has to wait until the first mesh's
+	// weights are in, because MD5_FixJointTranslationScale needs them.
+	TEMP_ALLOC_ZEROED (jointpose_t, inverted_joints, numjoints * anim.numposes);
 	TEMP_ALLOC_ZEROED (jointpose_t, concat_joints, anim.numjoints);
-	for (size_t pose_index = 0; pose_index < anim.numposes; ++pose_index)
-	{
-		const jointpose_t *in_pose = anim.posedata + (pose_index * anim.numjoints);
-		const jointpose_t *out_pose = inverted_joints + (pose_index * anim.numjoints);
-		for (size_t joint_index = 0; joint_index < anim.numjoints; ++joint_index)
-		{
-			// concat it onto the parent (relative->abs)
-			if (joint_infos[joint_index].parent < 0)
-				memcpy (concat_joints[joint_index].mat, in_pose[joint_index].mat, sizeof (jointpose_t));
-			else
-				R_ConcatTransforms (
-					(void *)concat_joints[joint_infos[joint_index].parent].mat, (void *)in_pose[joint_index].mat, (void *)concat_joints[joint_index].mat);
-			// and finally invert it
-			R_ConcatTransforms ((void *)concat_joints[joint_index].mat, (void *)joint_infos[joint_index].inverse.mat, (void *)out_pose[joint_index].mat);
-		}
-	}
-	Mem_Free (anim.posedata);
 
 	// 3. each mesh has its own aliashdr_t : load vertices, triangles, textures...etc. and upload to GPU each surface:
 
@@ -5353,6 +5465,16 @@ static void Mod_LoadMD5MeshModel (qmodel_t *mod, const void *buffer)
 		}
 
 		MD5EXPECT ("}");
+
+		// The bind pose is only usable once the weights are in, so the first mesh's are
+		// what the joint palette gets built from. Every mesh shares the one joint block.
+		if (m == 0)
+		{
+			MD5_FixJointTranslationScale (fname, joint_poses, numjoints, vinfo, weight, surf->numverts, numweights);
+			for (size_t j = 0; j < numjoints; j++)
+				Matrix3x4_Invert_Simple (joint_poses[j].mat, joint_infos[j].inverse.mat); // absolute, so we can just invert now.
+			MD5Anim_BuildPalette (&anim, joint_infos, numjoints, inverted_joints, concat_joints);
+		}
 
 		// so make it gpu-friendly.
 		MD5_BakeInfluences (fname, joint_poses, poutvertexes, vinfo, weight, surf->numverts, numweights);
