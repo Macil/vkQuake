@@ -86,6 +86,8 @@ typedef enum
 } cmd_source_t;
 extern cmd_source_t cmd_source;
 
+extern cvar_t cfg_per_game;
+
 typedef void (*xcommand_t) (void);
 typedef void (*xtabcommand_t) (const char *partial);
 

@@ -3250,7 +3250,7 @@ The caller owns the returned text.
 char *COM_LoadConfigFile (const char *path)
 {
 	const char *name = path;
-	FILE	   *files[2] = {NULL, NULL};
+	FILE	   *files[2] = {NULL, NULL}; // global config, per-game config
 	qfilesize_t lengths[2] = {0, 0};
 	char	   *buf;
 	size_t		used = 0;
@@ -3296,6 +3296,17 @@ char *COM_LoadConfigFile (const char *path)
 			used += strlen (buf + used);
 			buf[used++] = '\n';
 			loaded = true;
+
+			// If we're processing the global config, cfg_per_game is false, and
+			// the global config contains "_cl_name", then we ignore the
+			// per-game config. (We load the per-game config when the global
+			// config lacks "_cl_name" since it was likely written by an older
+			// vkQuake that kept most settings only in the per-game config.)
+			if (i == 0 && files[1] && !cfg_per_game.value && strstr (buf, "_cl_name "))
+			{
+				fclose (files[1]);
+				files[1] = NULL;
+			}
 		}
 		fclose (files[i]);
 	}

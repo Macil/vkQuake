@@ -28,6 +28,7 @@ cvar_t cl_nopext = {"cl_nopext", "0", CVAR_NONE};	 // Spike -- prevent autodetec
 													 // protocol (without needing to reconfigure the server. Requires reconnect.
 cvar_t cmd_warncmd = {"cl_warncmd", "1", CVAR_NONE}; // Spike -- prevent autodetection of protocol extensions, so that servers fall back to only their base
 													 // protocol (without needing to reconfigure the server. Requires reconnect.
+cvar_t cfg_per_game = {"cfg_per_game", "0", CVAR_ARCHIVE}; // if set, per-game configs are read and game-archived settings are kept out of the global config
 void   Cmd_ForwardToServer (void);
 
 #define MAX_ALIAS_NAME 32
@@ -589,6 +590,7 @@ void Cmd_Init (void)
 
 	Cvar_RegisterVariable (&cl_nopext);
 	Cvar_RegisterVariable (&cmd_warncmd);
+	Cvar_RegisterVariable (&cfg_per_game);
 }
 
 /*
