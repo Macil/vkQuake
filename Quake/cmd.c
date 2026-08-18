@@ -28,6 +28,7 @@ cvar_t cl_nopext = {"cl_nopext", "0", CVAR_NONE};	 // Spike -- prevent autodetec
 													 // protocol (without needing to reconfigure the server. Requires reconnect.
 cvar_t cmd_warncmd = {"cl_warncmd", "1", CVAR_NONE}; // Spike -- prevent autodetection of protocol extensions, so that servers fall back to only their base
 													 // protocol (without needing to reconfigure the server. Requires reconnect.
+cvar_t cfg_per_game = {"cfg_per_game", "0", CVAR_ARCHIVE}; // if set, per-game configs are read and game-archived settings are kept out of the global config
 void   Cmd_ForwardToServer (void);
 
 #define MAX_ALIAS_NAME 32
@@ -300,7 +301,15 @@ void Cmd_Exec_f (void)
 				buf[length] = 0;
 			fclose (f);
 		}
-		game_buf = (char *)COM_LoadFile (path, NULL);
+
+		// if the global config lacks "_cl_name", it was likely written by an
+		// older vkQuake that kept most settings in the per-game config, so do
+		// a one-off migration read of the per-game config as well
+		if (cfg_per_game.value || !buf || !strstr (buf, "_cl_name "))
+			game_buf = (char *)COM_LoadFile (path, NULL);
+		else
+			game_buf = NULL;
+
 		// The portable compatibility fallback and the game search can resolve
 		// to the same old id1 config. Execute it only once.
 		if (buf && game_buf && !strcmp (buf, game_buf))
@@ -655,6 +664,7 @@ void Cmd_Init (void)
 
 	Cvar_RegisterVariable (&cl_nopext);
 	Cvar_RegisterVariable (&cmd_warncmd);
+	Cvar_RegisterVariable (&cfg_per_game);
 }
 
 /*

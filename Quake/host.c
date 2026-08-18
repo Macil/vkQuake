@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "bgmusic.h"
+#include "cfgfile.h"
 #include "steam.h"
 #include "tasks.h"
 #include <setjmp.h>
@@ -429,7 +430,15 @@ void Host_WriteConfiguration (void)
 
 		// VID_SyncCvars (); //johnfitz -- write actual current mode to config file, in case cvars were messed with
 
-		Cvar_WriteVariables (f, CVAR_ARCHIVE);
+		if (!cfg_per_game.value)
+		{
+			// per-game configs are not read, so keep bindings and
+			// game-archived cvars in the global config as well
+			Key_WriteBindings (f);
+			Cvar_WriteVariables (f, CVAR_ARCHIVE | CVAR_ARCHIVE_GAME);
+		}
+		else
+			Cvar_WriteVariables (f, CVAR_ARCHIVE);
 		fprintf (f, "vid_restart\n");
 		fclose (f);
 
@@ -1238,6 +1247,19 @@ void Host_Init (void)
 	COM_Init ();
 	COM_InitFilesystem ();
 	Host_InitLocal ();
+
+	// early read of cfg_per_game from the global config, so that
+	// Cmd_Exec_f knows whether to read per-game configs
+	{
+		static const char *read_vars[] = {"cfg_per_game"};
+		if (CFG_OpenConfig (CONFIG_NAME) == 0)
+		{
+			CFG_ReadCvars (read_vars, 1);
+			CFG_CloseConfig ();
+		}
+		CFG_ReadCvarOverrides (read_vars, 1);
+	}
+
 	W_LoadWadFile (); // johnfitz -- filename is now hard-coded for honesty
 	if (cls.state != ca_dedicated)
 	{
