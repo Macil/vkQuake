@@ -1286,7 +1286,7 @@ void Con_VPrintf2 (qboolean use_stdout, const char *fmt, va_list argptr)
 	Con_Print (msg);
 
 	// update the screen if the console is displayed
-	if (host_framecount > 0 && cls.signon != SIGNONS && !scr_disabled_for_loading && !Tasks_IsWorker ())
+	if (cls.signon != SIGNONS && !scr_disabled_for_loading && !Tasks_IsWorker ())
 	{
 		// protect against infinite loop if something in SCR_UpdateScreen calls
 		// Con_Printd
