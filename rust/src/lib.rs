@@ -16,12 +16,12 @@ use axum::{
 };
 use axum_helpers::QuakeAPIResponseError;
 use db::QuakeDb;
-use hyperlocal_with_windows::{remove_unix_socket_if_present, UnixServerExt};
+use hyperlocal_with_windows::{remove_unix_socket_if_present, CommonUnixListener, UnixListenerExt};
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{net::SocketAddr, time::Duration};
 use tokio::runtime::Runtime;
-use tower::ServiceBuilder;
+use tower::{ServiceBuilder, ServiceExt};
 use tower_http::{trace::TraceLayer, validate_request::ValidateRequestHeaderLayer};
 
 /// Should only need to be used directly by synchronous code called from C.
@@ -114,9 +114,13 @@ async fn listen_on_unix_socket() -> anyhow::Result<()> {
     remove_unix_socket_if_present(&unix_socket_path).await?;
     let app = create_app(true);
     tracing::info!("listening on unix socket");
-    axum::Server::bind_unix(&unix_socket_path)?
-        .serve(app.into_make_service())
-        .await?;
+    CommonUnixListener::bind(&unix_socket_path)?
+        .serve(move || {
+            let app = app.clone();
+            move |request| app.clone().oneshot(request)
+        })
+        .await
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
     Ok(())
 }
 
@@ -124,9 +128,8 @@ async fn listen_on_tcp_socket() -> anyhow::Result<()> {
     let app = create_app(false);
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::info!("listening on {}", addr);
-    axum::Server::try_bind(&addr)?
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
     Ok(())
 }
 
