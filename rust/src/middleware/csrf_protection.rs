@@ -97,8 +97,8 @@ mod tests {
     use tower_http::validate_request::ValidateRequestHeaderLayer;
 
     use super::*;
+    use axum::body::Body;
     use http::header;
-    use hyper::Body;
     use tower::{BoxError, ServiceBuilder, ServiceExt};
     use tower_service::Service;
 

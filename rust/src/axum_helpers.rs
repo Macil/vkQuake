@@ -5,7 +5,7 @@ use http::StatusCode;
 pub enum QuakeAPIResponseError {
     Err(Box<dyn std::error::Error>),
     #[allow(dead_code)]
-    ErrResponse(Response),
+    ErrResponse(Box<Response>),
 }
 
 impl<E: std::error::Error + 'static> From<E> for QuakeAPIResponseError {
@@ -21,7 +21,7 @@ impl IntoResponse for QuakeAPIResponseError {
                 tracing::error!("Error in response Handler: {}", error.as_ref());
                 (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong").into_response()
             }
-            Self::ErrResponse(response) => response,
+            Self::ErrResponse(response) => *response,
         }
     }
 }

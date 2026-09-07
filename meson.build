@@ -454,11 +454,22 @@ incdirs = [
 
 cargo = find_program('cargo', required: true)
 
+cargo_env = environment()
+if host_machine.system() == 'darwin'
+    # When MACOSX_DEPLOYMENT_TARGET isn't set, the Rust `cc` crate (used by libsqlite3-sys) compiles
+    # for the SDK version (e.g. 14.5) while clang compiles/links for the host OS version (e.g. 14.0).
+    # The linker then warns that librust.a was built for a newer macOS than vkquake, which is fatal
+    # with werror. Tell cargo to use the exact deployment target the C compiler is using.
+    macos_min_required = cc.get_define('__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__').to_int()
+    cargo_env.set('MACOSX_DEPLOYMENT_TARGET', '@0@.@1@'.format(macos_min_required / 10000, (macos_min_required / 100) % 100))
+endif
+
 cargo_build = custom_target(
   'cargo-build',
   build_always_stale: true,
   output: 'librust.a',
   console: true,
+  env: cargo_env,
   command: [
     cargo, 'build', cargo_options, '&&',
     'cp', meson.project_source_root() / 'rust/target' / rust_target / 'librust.a', '@OUTPUT@'
