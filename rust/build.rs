@@ -96,7 +96,7 @@ fn run_bindgen() {
         .blocklist_type(r"_complex")
         .blocklist_function(r"_cabs")
         // these collide with Rust's definitions of the same functions
-        .blocklist_function(r"^(memcmp|memcpy|memmove|memset|strlen)$")
+        .blocklist_function(r"^(memcmp|memcpy|memmove|memset|strlen|bcmp)$")
         .parse_callbacks(Box::new(ignored_macros));
 
     for include_path in compute_include_paths() {
