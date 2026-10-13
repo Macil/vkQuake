@@ -97,6 +97,9 @@ fn run_bindgen() {
         .blocklist_function(r"_cabs")
         // these collide with Rust's definitions of the same functions
         .blocklist_function(r"^(memcmp|memcpy|memmove|memset|strlen|bcmp)$")
+        // these trip rustc's suspicious_runtime_symbol_definitions lint because
+        // bindgen emits size_t as c_ulong instead of usize on some platforms
+        .blocklist_function(r"^(malloc|calloc|realloc|free)$")
         // bindgen's bitfield constructor for this struct has a `render_warp`
         // parameter, which collides with the `render_warp` static
         .opaque_type(r"^end_rendering_parms_(s|t)$")
