@@ -97,6 +97,9 @@ fn run_bindgen() {
         .blocklist_function(r"_cabs")
         // these collide with Rust's definitions of the same functions
         .blocklist_function(r"^(memcmp|memcpy|memmove|memset|strlen|bcmp)$")
+        // bindgen's bitfield constructor for this struct has a `render_warp`
+        // parameter, which collides with the `render_warp` static
+        .opaque_type(r"^end_rendering_parms_(s|t)$")
         .parse_callbacks(Box::new(ignored_macros));
 
     for include_path in compute_include_paths() {
