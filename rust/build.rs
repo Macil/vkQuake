@@ -94,6 +94,9 @@ fn run_bindgen() {
         .blocklist_type(r"_JUMP_BUFFER")
         .blocklist_type(r"__mingw_ldbl_type_t")
         .blocklist_type(r"_complex")
+        // GCC's AMX intrinsics struct is both packed and aligned, which Rust
+        // can't represent (E0587) and leads to build errors on MinGW
+        .blocklist_type(r"__tile1024i(_str)?")
         .blocklist_function(r"_cabs")
         // these collide with Rust's definitions of the same functions
         .blocklist_function(r"^(memcmp|memcpy|memmove|memset|strlen|bcmp)$")
