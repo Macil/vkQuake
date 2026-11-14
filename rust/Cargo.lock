@@ -869,7 +869,6 @@ dependencies = [
  "http-body",
  "hyper",
  "hyperlocal-with-windows",
- "libc",
  "once_cell",
  "pkg-config",
  "regex",
